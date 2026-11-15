@@ -1,0 +1,118 @@
+# Handover notes
+
+For the developer taking this site live and looking after it. Read this once
+and you should not need to ask anyone how it works.
+
+## What you are receiving
+
+| Item | Where | State |
+|---|---|---|
+| Public website, English and Bangla | `public_html/index.php`, `assets/` | Finished and tested |
+| Admin (products, plants, health areas, page text, images, video) | `public_html/admin/` | Finished and tested |
+| Database structure and starting content | `private_app/schema.sql`, `seed_1.sql`, `seed_2.sql`, `copy_defaults.php` | 71 products, 17 health areas, 8 plants, 3 figures, 71 pieces of page text |
+| Starter pictures | `seed/` | 75 product photographs, 1 facility photograph |
+| One-time installer | `public_html/admin/install.php` | Finished. Must be deleted after use |
+| Live server, domain, database | Hostinger account of the site owner | **Not set up by this repository.** See the checklist below |
+
+There are no hidden dependencies. No Composer, no npm, no CDN, no API keys,
+no analytics, no outside fonts. The fonts are in `assets/fonts`.
+
+## Go-live checklist
+
+1. **PHP 8.0 or newer** with the `pdo_mysql`, `gd` and `fileinfo` extensions. Hostinger has all three switched on by default.
+2. **Create a MySQL database and user.** Note the name, user and password.
+3. **Create `private_app/config.php`** from `config.sample.php`. Fill in the four database values and replace `session_secret` with a long random string.
+4. **Upload three folders** so they sit side by side: `private_app/`, `public_html/` (its contents go into the server's web root) and `seed/`.
+5. **Open `/admin/install.php`**, fill in a name, email and password. It reports what it did and checks its own row counts.
+6. **Delete `public_html/admin/install.php`** from the server.
+7. **Confirm `/private_app/config.php` returns 403 or 404** from a browser. If the host forces `private_app` inside the web root, the `.htaccess` in that folder (`Require all denied`) blocks it, but test it.
+8. **Turn on HTTPS** and force it.
+9. **Open the site** in English and with `?lang=bn`, on a computer and on a phone.
+
+The click-by-click version of this, for a non-developer, is in
+`docs/INSTALL-HOSTINGER.md`.
+
+### Deploying from GitHub
+
+The repository keeps `private_app` and `public_html` as sibling folders. A
+deploy must preserve that, with the server's web root pointing at
+`public_html`. Two ways that work:
+
+- **Upload by hand or by SFTP.** Simplest, and fine for a site that changes rarely.
+- **Automatic deploy.** Either Hostinger's Git feature (hPanel, Advanced, Git) if your plan lets the target folder sit above the web root, or a GitHub Action that copies the three folders over FTP or SSH. Check which your plan allows before choosing. Do not deploy the whole repository into the web root as it is, because the site would then be served from `/public_html/`.
+
+Whichever you choose, a deploy must never overwrite `private_app/config.php`
+or `public_html/uploads/`. Both are in `.gitignore` for that reason.
+
+## Day-to-day operations
+
+Everything below is done at `/admin/` and needs no code.
+
+| Task | Screen |
+|---|---|
+| Change a price, pack, ingredient, description or photo | Products |
+| Hide a product without deleting it | Products, untick Visible |
+| Change the eight plants or which product each becomes | Plants |
+| Rename or reorder health areas | Health areas |
+| Change any headline, paragraph, button or menu label | Page text |
+| Upload product photographs | Images |
+| Add a background video or still | Video |
+
+Things worth knowing:
+
+- **Every text box is a pair,** English and Bangla. An empty Bangla box falls back to English, so nothing ever shows blank.
+- **Products are stored one row per pack size.** The site groups rows that share a brand and a form into one card and lists the packs inside it. To add a new pack size, add a product row with the same brand and form.
+- **The health area list hides empty areas** and counts product cards, not pack sizes.
+- **Video slots take a still picture, a video, or both.** `hero` plays behind the headline. `interlude` adds a full-screen band between health areas and products, and only exists when switched on. `export` fills the curved frame. MP4, 16:9, silent, under 8 MB. Video does not autoplay for visitors who ask for reduced motion or data saving.
+- **Product photographs** are resized to 1200 px on upload. Clean shots on a white or transparent background look best, because they sit on a white card.
+
+## Where to change things in code
+
+| To change | Edit |
+|---|---|
+| A colour, font size, spacing or section gap | `public_html/assets/css/site.css`, section 2 (the `:root` block) |
+| The order of sections, or the markup of one | `public_html/index.php`. Each section is labelled with a comment |
+| The default wording, or add a new piece of text | `private_app/copy_defaults.php`. Add a row, call `copyText('section','key')` in `index.php`, then open Admin, Page text once and the new row appears |
+| Scroll behaviour, filters, product window | `public_html/assets/js/site.js`. Nine numbered parts, listed at the top |
+| The painted leaves | `public_html/assets/js/scene.js`. Colours in `PALETTE`, layouts in `PRESETS` |
+| A plant drawing, or add one | `public_html/assets/js/plants.js`. Paths on a 400 by 400 canvas. After adding one, add its key to `$plantKeys` at the top of `admin/ingredients.php` so it appears in the Drawing list |
+| Database structure | `private_app/schema.sql`. There is no migration tool. For a live site, apply `ALTER TABLE` by hand in phpMyAdmin and update this file to match |
+| Shared PHP helpers | `private_app/bootstrap.php` (`q`, `q1`, `run`, `pick`, `copyText`, `digits`, `money`, CSRF, login) |
+
+Design rules are in `docs/DESIGN.md`. Read it before changing the look.
+
+### How the pieces fit
+
+- `index.php` runs five queries, groups products in PHP, and prints the whole page. Product details for the pop-up window are printed once as JSON in a `<script type="application/json">` tag. There are no AJAX calls.
+- The page is complete without JavaScript. CSS only hides things for animation when `<html>` has the class `js`, which a one-line inline script adds.
+- Motion is hand-written, with no library. One `requestAnimationFrame` loop in `site.js` drives the hero depth, the sideways plant row and the leaf-to-bottle link. Everything else is CSS transitions started by an `IntersectionObserver`.
+- The sideways row is only pinned above 900 px and when the visitor has not asked for reduced motion. Otherwise it is a normal swipeable row.
+- Bangla mode switches digits and currency (`৳`) in PHP (`digits()`, `money()`) and in `site.js` (`digits()`).
+
+## Data and privacy
+
+- The public site collects nothing. No forms, no analytics, no tracking. It sets one cookie, `sqnm_lang`, to remember the language.
+- The admin stores a name, email and password hash per user (`password_hash`), and a plain activity log of who changed what.
+- All admin forms carry a CSRF token. Uploads are checked by content type, images are re-encoded through GD, and PHP execution is switched off inside `uploads/`.
+- There is one admin role. Every user can change everything.
+
+## Known limits and suggested next steps
+
+Content that still needs a person:
+
+1. **Bangla product indications.** The 71 "used for" descriptions exist in English only and currently fall back to English. They need a qualified medical translator, not machine translation.
+2. **Regulatory review.** Public indications and prices, and the three figures in "Why natural medicine" (especially the 2 million adverse drug reactions figure), should be cleared by regulatory affairs before launch. All are taken from the division's booklet.
+3. **Two products have no photograph:** D-Sitol and Probio R. They show a leaf placeholder.
+4. **Five products on the SQUARE website are not in the booklet** and so are not in the starting data: Carazol, Caroba, Laxisoft, Manli, Q-late. Their photographs are in `seed/product-images` if they are added.
+5. **Photography.** Several pack shots have a grey studio background that shows as a rectangle on the white card. Reshooting or cutting them out would lift the product list noticeably. The facility photograph is a low-resolution crop from the booklet and should be replaced with an original.
+6. **Background video.** Three slots are ready and empty. Until they are filled the site uses the painted leaves, which is a complete look on its own.
+7. **Official logo.** The top bar uses a text wordmark and a leaf mark. Replace with the official SQUARE Herbal & Ayurvedic logo when the file is available.
+8. **Contact details.** The booklet has none, so the footer has none. Add them in Admin, Page text, Footer, Contact line.
+
+Technical, for when there is time:
+
+1. Add a second admin role (editor without user management) if more people will log in.
+2. Add rate limiting to `admin/login.php`.
+3. Serve product photographs as WebP with a `srcset`.
+4. Add a privacy page if analytics or a contact form is ever added.
+5. Individual product pages with their own addresses would help search engines. Today all products live on the one page.

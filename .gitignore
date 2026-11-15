@@ -1,0 +1,19 @@
+# Never commit the database password
+private_app/config.php
+
+# Content, not code. These live on the server and are managed
+# through the admin, so keeping them out of Git avoids a huge
+# repository and stops a deploy from overwriting live uploads.
+public_html/uploads/products/*
+public_html/uploads/video/*
+!public_html/uploads/products/.gitkeep
+!public_html/uploads/video/.gitkeep
+!public_html/uploads/.htaccess
+
+# Local noise
+.DS_Store
+Thumbs.db
+*.log
+
+# Editor and tool caches
+.impeccable/

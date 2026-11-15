@@ -1,0 +1,5 @@
+# Belt and braces: this folder holds uploads only, never programs.
+php_flag engine off
+<FilesMatch "\.(php|phtml|phar|cgi|pl|py|sh)$">
+  Require all denied
+</FilesMatch>

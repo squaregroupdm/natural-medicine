@@ -1,0 +1,2 @@
+# This folder must never be readable from the internet.
+Require all denied
