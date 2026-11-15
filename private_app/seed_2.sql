@@ -1,5 +1,5 @@
 -- =====================================================================
---  Seed part 2: the plants, the figures and the video slots. Bangla is filled in here.
+--  Seed part 2: the plants, the figures and the film slots. Bangla is filled in here.
 -- =====================================================================
 
 SET NAMES utf8mb4;
@@ -84,6 +84,11 @@ INSERT INTO figures (number, suffix, note_en, note_bn, sort_order) VALUES
 -- ---------------- the three video slots ----------------
 
 INSERT INTO videos (slot, label, file_mp4, poster, is_enabled) VALUES
-('hero','Opening screen. Plays behind the headline, over the painted leaves.',NULL,NULL,0),
-('interlude','A full-screen pause between the health areas and the product list.',NULL,NULL,0),
-('export','Export section. The picture or video inside the curved frame.',NULL,'export-facility.jpg',1);
+('hero','Opening screen. The camera moves into the forest behind the headline.','hero.mp4','hero.jpg',1),
+('why','Why natural medicine. Looking up through the trees behind the three figures.','why.mp4','why.jpg',1),
+('leaf','Leaf to bottle. A close view of one leaf before the pack appears.','leaf.mp4','leaf.jpg',1),
+('export','Export section. The picture or video inside the curved frame.',NULL,'export-facility.jpg',1),
+('close','Closing screen. The view over the forest behind the last headline.','close.mp4','close.jpg',1);
+
+-- Each plant starts with a photograph and a short clip of the same name.
+UPDATE ingredients SET image = CONCAT('plant-', slug, '.jpg'), video = CONCAT('plant-', slug, '.mp4');

@@ -53,7 +53,8 @@ CREATE TABLE IF NOT EXISTS ingredients (
   does_en      TEXT NULL,                      -- what it does
   does_bn      TEXT NULL,
   product_id   INT UNSIGNED NULL,              -- the product it becomes
-  image        VARCHAR(255) NULL,              -- optional plant photo
+  image        VARCHAR(255) NULL,              -- plant photo (also the still for the clip)
+  video        VARCHAR(255) NULL,              -- short clip that plays as the visitor scrolls
   sort_order   INT NOT NULL DEFAULT 0,
   is_visible   TINYINT(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -121,7 +122,7 @@ CREATE TABLE IF NOT EXISTS figures (
 -- ---------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS videos (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  slot        VARCHAR(40) NOT NULL UNIQUE,   -- hero, interlude, export
+  slot        VARCHAR(40) NOT NULL UNIQUE,   -- hero, why, leaf, export, close
   label       VARCHAR(160) NOT NULL,
   file_mp4    VARCHAR(255) NULL,
   poster      VARCHAR(255) NULL,             -- the still shown on phones

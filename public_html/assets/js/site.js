@@ -4,14 +4,15 @@
 
    Contents
      1. Helpers
-     2. Plant drawings        (fills every [data-plant] from plants.js)
-     3. Reveal on first view  ([data-r], [data-words], plates, counters)
-     4. Scroll loop           (hero depth, plants row, leaf to bottle)
+     2. Plant drawings        (only used when a plant has no photograph)
+     3. Reveal on first view  ([data-r], [data-words])
+     4. Film scenes           (clips that follow the scroll, staged words,
+                               weighted scrolling, pointer depth, card tilt)
      5. Top bar and phone menu
      6. Health areas          (hover preview, click to filter)
      7. Catalogue             (filter, search, sort)
      8. Product window
-     9. Background video
+     9. Background video      (the export frame only)
 
    The page works with this file missing: all content is in the HTML
    and the CSS only hides things when <html> has the class "js".
@@ -107,98 +108,130 @@
       if (!entry.isIntersecting) return;
       var el = entry.target;
       el.classList.add('in');
-      $$('[data-count]', el).forEach(countUp);
       seen.unobserve(el);
     });
   }, { rootMargin: '0px 0px -10% 0px', threshold: 0.12 });
 
-  $$('[data-r], [data-words], .plate').forEach(function (el) { seen.observe(el); });
+  $$('[data-r], [data-words]').forEach(function (el) { seen.observe(el); });
 
   /* the hero is on screen at once, so show it without waiting for a scroll */
   requestAnimationFrame(function () {
-    $$('.hero [data-r], .hero [data-words], .hero .plate').forEach(function (el) { el.classList.add('in'); });
+    $$('.hero [data-r], .hero [data-words]').forEach(function (el) { el.classList.add('in'); });
   });
 
 
-  /* ---------- 4. Scroll loop ---------- */
+  /* ---------- 4. Film scenes ---------- */
 
-  var hero = $('.hero');
-  var heroLayers = $$('.hero .layer');
-  var heroPlates = $('.hero-plates');
-  var heroCopy = $('.hero-copy');
-  var materia = $('.materia');
-  var track = $('#track');
-  var rail = $('#rail');
-  var railNow = $('#railNow');
-  var railBar = $('#railBar');
-  var specimens = $$('.specimen:not(.last)');
-  var journey = $('#journey');
+  /* How a scene works
+     -----------------
+     Every <section data-scene> is taller than the screen (its --len, in
+     screens). Its .stage sticks to the screen while you scroll through.
+     Each frame we work out, for every scene near the screen:
+
+       p     0..1  position through the whole scene. The clip is set to
+                   p x its length, so scrolling forwards plays it and
+                   scrolling back rewinds it.
+       fade  0..1  the scene dissolves in over the one before it during
+                   its first FADE screens.
+       q     0..1  position through the part where the words can be read:
+                   after the fade in, before the next scene covers it.
+       o     0..1  the words leave just before the next scene arrives.
+
+     OVERLAP and FADE below must match the -160vh margin in site.css.    */
+
+  var OVERLAP = 1.6;     // screens that each scene sits on top of the previous one
+  var FADE = 0.6;        // screens over which a scene dissolves in
+  var sceneEls = $$('[data-scene]');
+  var FILM = sceneEls.length > 0 && !CALM;
   var frame = $('.frame');
-
   var vh = window.innerHeight, vw = window.innerWidth;
-  var travel = 0;          // how far the plants row has to slide, in px
-  var pinned = false;
-  var mx = 0, my = 0, tx = 0, ty = 0;   // pointer position, eased
+  var mx = 0, my = 0, tx = 0, ty = 0;   // pointer position, raw and eased
+
+  var scenes = sceneEls.map(function (el, i) {
+    var next = sceneEls[i + 1];
+    return {
+      el: el,
+      video: $('video[data-src]', el),
+      counts: $$('[data-count]', el),
+      orbit: el.hasAttribute('data-orbit'),
+      fades: i > 0 && !el.hasAttribute('data-solo'),
+      covered: !!next && !next.hasAttribute('data-solo') && !el.hasAttribute('data-last') && !el.hasAttribute('data-solo'),
+      top: 0, height: 0, time: 0, loaded: false, live: null, gone: null
+    };
+  });
+
+  if (FILM) doc.classList.add('film-on');
 
   function measure() {
     vh = window.innerHeight; vw = window.innerWidth;
-    pinned = !!(track && WIDE.matches && !CALM);
-    doc.classList.toggle('rail-pin', pinned);
-    if (pinned) {
-      travel = Math.max(0, track.scrollWidth - vw);
-      materia.style.setProperty('--travel', travel + 'px');
-    } else if (track) {
-      track.style.removeProperty('--x');
-    }
+    var y = window.scrollY;
+    scenes.forEach(function (s) {
+      var r = s.el.getBoundingClientRect();
+      s.top = r.top + y; s.height = r.height;
+    });
   }
 
-  function setCounter(index) {
-    if (!railNow) return;
-    var text = pad2(clamp(index, 0, specimens.length - 1) + 1);
-    if (railNow.textContent !== text) railNow.textContent = text;
+  /* fetch a clip shortly before it is needed, never all of them at once */
+  function loadClip(s) {
+    if (s.loaded || !s.video) return;
+    s.loaded = true;
+    var v = s.video;
+    v.src = v.getAttribute('data-src');
+    v.preload = 'auto';
+    v.addEventListener('loadeddata', function () { v.classList.add('ready'); }, { once: true });
+    v.load();
+    /* phones only keep a clip in memory once it has been played */
+    var kick = v.play();
+    if (kick && kick.then) kick.then(function () { v.pause(); }).catch(function () {});
   }
 
   function tick() {
     var y = window.scrollY;
+    tx += (mx - tx) * 0.07; ty += (my - ty) * 0.07;
 
-    /* hero: leaves at three depths, plates drifting, copy easing away */
-    if (hero && y < vh * 1.3 && !CALM) {
-      tx += (mx - tx) * 0.06; ty += (my - ty) * 0.06;
-      heroLayers.forEach(function (layer) {
-        var depth = parseFloat(layer.getAttribute('data-depth')) || 0;
-        layer.style.transform = 'translate3d(' + (tx * depth * -46).toFixed(1) + 'px,' + (y * depth * -0.9 + ty * depth * -30).toFixed(1) + 'px,0)';
+    if (FILM) {
+      scenes.forEach(function (s) {
+        var into = y - s.top;                  // px scrolled into this scene
+        var total = s.height - vh;             // px over which it stays pinned
+        var near = into > -vh * 2.4 && into < s.height + vh * 0.6;
+        var gone = !near;
+        if (gone !== s.gone) { s.gone = gone; s.el.classList.toggle('gone', gone); }
+        if (!near) { if (s.live) { s.live = false; s.el.classList.remove('live'); } return; }
+        loadClip(s);
+
+        var p = clamp(into / total, 0, 1);
+        var fade = s.fades ? clamp(into / (FADE * vh), 0, 1) : 1;
+        var start = s.fades ? (FADE * vh) / total : 0;
+        var end = s.covered ? (s.height - OVERLAP * vh) / total : 1;
+        var q = clamp((p - start) / (end - start), 0, 1);
+        var o = s.covered ? clamp((end - p) * 14, 0, 1) : 1;
+        var live = fade > 0.5 && (!s.covered || into < s.height - vh * (OVERLAP - FADE / 2));
+
+        var st = s.el.style;
+        st.setProperty('--p', p.toFixed(4));
+        st.setProperty('--q', q.toFixed(4));
+        st.setProperty('--o', o.toFixed(3));
+        st.setProperty('--fade', fade.toFixed(3));
+        st.setProperty('--mx', tx.toFixed(3));
+        st.setProperty('--my', ty.toFixed(3));
+        if (live !== s.live) { s.live = live; s.el.classList.toggle('live', live); }
+
+        /* the clip follows the scroll, eased, and on plant scenes it also
+           leans a little with the pointer so the plant seems to turn */
+        var v = s.video;
+        if (v && v.readyState >= 2 && v.duration) {
+          var want = p * (v.duration - 0.08) + (s.orbit ? tx * 0.5 : 0);
+          want = clamp(want, 0, v.duration - 0.05);
+          s.time += (want - s.time) * 0.14;
+          if (!v.seeking && Math.abs(v.currentTime - s.time) > 0.012) v.currentTime = s.time;
+        }
+
+        /* figures count up as their line arrives, once */
+        s.counts.forEach(function (el) {
+          if (el._done || q < parseFloat(el.getAttribute('data-at') || 0) + 0.03) return;
+          el._done = true; countUp(el);
+        });
       });
-      if (heroPlates) {
-        heroPlates.style.setProperty('--sy', (y * 0.012).toFixed(2));
-        heroPlates.style.setProperty('--mx', tx.toFixed(3));
-        heroPlates.style.setProperty('--my', ty.toFixed(3));
-      }
-      if (heroCopy) {
-        var fade = clamp(y / (vh * 0.8), 0, 1);
-        heroCopy.style.opacity = (1 - fade * 0.9).toFixed(3);
-        heroCopy.style.transform = 'translate3d(0,' + (y * -0.12).toFixed(1) + 'px,0)';
-      }
-    }
-
-    /* plants row: scrolling down slides the row sideways while it is pinned */
-    if (pinned) {
-      var box = materia.getBoundingClientRect();
-      var p = clamp(-box.top / (box.height - vh), 0, 1);
-      track.style.setProperty('--x', (p * travel).toFixed(1));
-      if (railBar) railBar.style.setProperty('--p', p.toFixed(4));
-      var mid = vw / 2, best = 0, gap = Infinity;
-      specimens.forEach(function (s, i) {
-        var r = s.getBoundingClientRect();
-        var d = Math.abs(r.left + r.width / 2 - mid);
-        if (d < gap) { gap = d; best = i; }
-      });
-      setCounter(best);
-    }
-
-    /* leaf to bottle: the link draws and the pack arrives as it crosses the screen */
-    if (journey && !CALM) {
-      var j = journey.getBoundingClientRect();
-      journey.style.setProperty('--p', clamp((vh * 0.92 - j.top) / (vh * 0.62), 0, 1).toFixed(3));
     }
 
     /* export picture drifts slightly inside its frame */
@@ -210,30 +243,12 @@
     requestAnimationFrame(tick);
   }
 
-  /* on phones the row is swiped by hand, so the counter follows the swipe */
-  if (rail) {
-    rail.addEventListener('scroll', function () {
-      if (pinned) return;
-      var p = rail.scrollLeft / Math.max(1, rail.scrollWidth - rail.clientWidth);
-      if (railBar) railBar.style.setProperty('--p', p.toFixed(4));
-      var mid = rail.getBoundingClientRect().left + rail.clientWidth / 2, best = 0, gap = Infinity;
-      specimens.forEach(function (s, i) {
-        var r = s.getBoundingClientRect();
-        var d = Math.abs(r.left + r.width / 2 - mid);
-        if (d < gap) { gap = d; best = i; }
-      });
-      setCounter(best);
-    }, { passive: true });
-
-    /* arrow keys move through the row */
-    rail.addEventListener('keydown', function (e) {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      e.preventDefault();
-      var dir = e.key === 'ArrowRight' ? 1 : -1;
-      if (pinned) window.scrollBy({ top: dir * travel / specimens.length, behavior: CALM ? 'auto' : 'smooth' });
-      else rail.scrollBy({ left: dir * rail.clientWidth * 0.86, behavior: CALM ? 'auto' : 'smooth' });
-    });
-  }
+  var resizeTimer;
+  window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(measure, 150); });
+  window.addEventListener('load', measure);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  measure();
+  requestAnimationFrame(tick);
 
   if (HOVER) {
     window.addEventListener('pointermove', function (e) {
@@ -241,13 +256,59 @@
     }, { passive: true });
   }
 
-  var resizeTimer;
-  window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(measure, 150); });
-  WIDE.addEventListener('change', measure);
-  window.addEventListener('load', measure);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
-  measure();
-  requestAnimationFrame(tick);
+  /* Weighted scrolling (mouse wheel on a computer only).
+     The wheel sets a destination and the page glides to it, which is what
+     makes the camera moves feel smooth instead of stepped. Touch screens,
+     trackpad momentum, the keyboard and the scrollbar are left alone. */
+  if (FILM && HOVER) {
+    var dest = window.scrollY, gliding = false;
+
+    function glide() {
+      if (!gliding) return;
+      var y = window.scrollY, gap = dest - y;
+      if (Math.abs(gap) < 0.6) { gliding = false; return; }
+      window.scrollTo({ top: y + gap * 0.11, behavior: 'instant' });
+      requestAnimationFrame(glide);
+    }
+
+    window.addEventListener('wheel', function (e) {
+      if (e.ctrlKey || e.defaultPrevented) return;                       // pinch zoom
+      if (doc.classList.contains('menu-open')) return;
+      if (e.target.closest && e.target.closest('dialog, .chips')) return; // let these scroll themselves
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      var step = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaMode === 2 ? e.deltaY * vh : e.deltaY;
+      if (!gliding) dest = window.scrollY;
+      dest = clamp(dest + step, 0, document.documentElement.scrollHeight - vh);
+      if (!gliding) { gliding = true; requestAnimationFrame(glide); }
+    }, { passive: false });
+
+    /* a menu link or the keyboard moved the page: stop gliding and follow */
+    ['keydown', 'pointerdown'].forEach(function (name) {
+      window.addEventListener(name, function () { gliding = false; }, { passive: true });
+    });
+  }
+
+  /* Cards lean towards the pointer, with a highlight that follows it */
+  if (HOVER && !CALM) {
+    $$('[data-tilt], .item button').forEach(function (card) {
+      var target = card.hasAttribute('data-tilt') ? card : $('.shot', card);
+      if (!target) return;
+      card.addEventListener('pointermove', function (e) {
+        var r = card.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width, py = (e.clientY - r.top) / r.height;
+        target.style.setProperty('--ry', ((px - 0.5) * 12).toFixed(2) + 'deg');
+        target.style.setProperty('--rx', ((0.5 - py) * 10).toFixed(2) + 'deg');
+        target.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
+        target.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+        target.style.setProperty('--g', '1');
+      });
+      card.addEventListener('pointerleave', function () {
+        ['--rx', '--ry'].forEach(function (k) { target.style.setProperty(k, '0deg'); });
+        target.style.setProperty('--g', '0');
+      });
+    });
+  }
 
 
   /* ---------- 5. Top bar and phone menu ---------- */
@@ -269,7 +330,7 @@
     var y = window.scrollY;
     nav.classList.toggle('stuck', y > 24);
     if (!doc.classList.contains('menu-open')) {
-      var hide = y > lastY && y > vh * 0.9;
+      var hide = y > lastY + 2 && y > vh * 0.9;
       nav.classList.toggle('hide', hide);
       doc.classList.toggle('nav-hidden', hide);   // lets the filter bar move up into the gap
     }
@@ -282,7 +343,8 @@
     entries.forEach(function (entry) {
       if (!entry.isIntersecting) return;
       menuLinks.forEach(function (a) {
-        if (a.getAttribute('href') === '#' + entry.target.id) a.setAttribute('aria-current', 'true');
+        var id = entry.target.id.indexOf('plant-') === 0 ? 'materia' : entry.target.id;
+        if (a.getAttribute('href') === '#' + id) a.setAttribute('aria-current', 'true');
         else a.removeAttribute('aria-current');
       });
     });

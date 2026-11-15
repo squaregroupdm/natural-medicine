@@ -12,7 +12,7 @@ function admin_head(string $title): void
         'areas.php'       => 'Health areas',
         'copy.php'        => 'Page text',
         'media.php'       => 'Images',
-        'videos.php'      => 'Video',
+        'videos.php'      => 'Film',
     ];
     ?><!DOCTYPE html>
 <html lang="en">

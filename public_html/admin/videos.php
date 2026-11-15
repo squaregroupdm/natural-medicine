@@ -1,5 +1,5 @@
 <?php
-/* Video: three background slots on the page. */
+/* Film: the full-screen clips and stills behind the story sections. */
 
 require __DIR__ . '/../../private_app/bootstrap.php';
 require __DIR__ . '/_layout.php';
@@ -25,8 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $mime  = $finfo->file($_FILES['mp4']['tmp_name']);
         if ($mime !== 'video/mp4') {
             $notes[] = 'The video must be an MP4 file.';
-        } elseif ($_FILES['mp4']['size'] > 8 * 1024 * 1024) {
-            $notes[] = 'That video is over 8 MB. Please compress it first.';
+        } elseif ($_FILES['mp4']['size'] > (int)($CONFIG['max_upload_mb'] ?? 8) * 1024 * 1024) {
+            $notes[] = 'That video is over ' . (int)($CONFIG['max_upload_mb'] ?? 8) . ' MB. Please compress it first.';
         } else {
             $name = $slot . '-' . time() . '.mp4';
             if (move_uploaded_file($_FILES['mp4']['tmp_name'], $dir . '/' . $name)) {
@@ -68,10 +68,14 @@ $rows = q('SELECT * FROM videos ORDER BY id');
 
 admin_head('Video');
 ?>
-<h1>Background video</h1>
-<p class="muted">Three places on the page can show a silent looping video, or just a still picture.
-   Upload a still on its own and the picture is used. Add an MP4 and the video plays over it on larger screens.
-   Leave a slot switched off and that section keeps its painted background.</p>
+<h1>Film</h1>
+<p class="muted">These are the full-screen scenes behind the story. Each one takes a still picture, a short clip, or both.
+   The clip does not play by itself: it moves forwards and backwards as the visitor scrolls.
+   The still is shown while the clip loads, and on its own for visitors who ask for less motion.
+   Switch a scene off and that section falls back to painted leaves.
+   The clips for the eight plants are on the <a href="ingredients.php">Plants</a> screen.</p>
+<p class="muted"><strong>Best results:</strong> MP4, 16:9, 4 to 6 seconds, silent, one slow continuous camera move with no cuts,
+   under <?= (int)($CONFIG['max_upload_mb'] ?? 8) ?> MB. Keep the left third of the picture dark and calm, because the words sit there.</p>
 
 <?php if ($notes): ?>
   <div class="notes"><?php foreach ($notes as $n) echo '<div>' . e($n) . '</div>'; ?></div>

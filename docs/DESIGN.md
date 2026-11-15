@@ -1,9 +1,9 @@
 # Design notes
 
-The idea in one line: **herbarium plates over living foliage.** Plants are shown
-as drawn specimens on paper cards. Products are shown as real photographs on
-white cards. Behind the dark sections, painted leaves at three depths give the
-page a sense of space without needing photography or video.
+The idea in one line: **a walk into the forest.** The first half of the page
+is film. Scrolling moves a camera into a misty forest, then around each plant
+in turn, and each plant ends with the product it becomes. The second half is
+plain and fast, because people who came to find a product should find it.
 
 Keep to these rules and later changes will look like they belong.
 
@@ -16,7 +16,6 @@ All colours are variables at the top of `assets/css/site.css`.
 | `--forest` | `#0B2526` | Dark sections |
 | `--forest-2` | `#0F3233` | Health areas section |
 | `--mist` | `#EDF2EE` | Light sections. Cool, never cream |
-| `--paper` | `#F6F7F0` | Plant cards |
 | `--white` | `#FFFFFF` | Product photograph cards only |
 | `--teal` | `#45989B` | Brand teal. Fills and thin lines, not text |
 | `--teal-deep` | `#1F6468` | Export section background |
@@ -41,13 +40,21 @@ height. Those overrides sit together near the end of the stylesheet under
 
 - Content width tops out at 1360 px, with a side margin of 20 to 72 px.
 - Sections are deliberately off-centre: headline left, supporting text or picture right, figures on an uneven grid.
-- Light and dark sections alternate, joined by the sweeping curve from the booklet cover.
+- The story is dark throughout. The product list is light, joined to it by the sweeping curve from the booklet cover.
 - Each section sets its own background. The top bar reads `data-tone` from the section beneath it.
+
+## Film
+
+- Every clip is one slow, continuous camera move with no cuts, 4 to 6 seconds, silent.
+- The subject sits on the right. The left third stays dark and calm, because the words sit there. On phones the picture is cropped to the right-hand part and the words move to the bottom.
+- One look across all clips: dawn light from the upper right, thin mist, deep teal-green shadows, shallow depth of field.
+- Product cards over film are frosted glass, so the photograph on its white tile is the brightest thing on screen.
 
 ## Motion
 
-- Things appear once, the first time they are seen: a short rise and fade. Headlines rise word by word. Plant drawings draw line by line.
-- Three things follow the scroll continuously: the hero leaves, the sideways plant row, and the leaf-to-bottle link.
+- The clip follows the scroll, forwards and back. Nothing in the story plays on a timer.
+- Words arrive one line at a time as the visitor scrolls, and leave before the next picture dissolves in.
+- On a computer the mouse wheel glides, the picture shifts slightly with the pointer, and cards lean towards it.
 - Only `transform` and `opacity` are animated.
 - Visitors who ask their device for reduced motion get a still page with everything visible.
 
@@ -56,4 +63,4 @@ height. Those overrides sit together near the end of the stylesheet under
 - Text contrast meets WCAG AA on every background used.
 - Every control is reachable by keyboard and shows a gold focus ring. The first Tab stop is a skip link.
 - The product window is a native `<dialog>`, so focus is trapped and Escape closes it.
-- Decorative drawings and the painted leaves are hidden from screen readers.
+- Clips are hidden from screen readers. Each still carries the plant's name as its description.

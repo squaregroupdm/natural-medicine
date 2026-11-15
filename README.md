@@ -11,18 +11,23 @@ price and picture can be changed without touching code.
 
 ## What the visitor sees
 
-The plant leads and the product follows.
+The plant leads and the product follows. The first half of the page is a
+film: scrolling moves a camera through a forest and around each plant.
 
 | # | Section | What happens |
 |---|---|---|
-| 1 | Hero | Painted leaves at three depths move with the scroll and the pointer. Three paper plant cards draw themselves in |
-| 2 | Why natural medicine | Three figures from the booklet count up. The percentage is also shown as ten leaves |
-| 3 | The plants | Eight large plant cards in a row. On a computer the row slides sideways while the page holds still. On a phone you swipe |
-| 4 | Leaf to bottle | One plant card, a drawn line, and the pack it becomes |
+| 1 | Hero | The camera pushes into a misty forest behind the headline as you scroll |
+| 2 | Why natural medicine | Three figures from the booklet count up under the forest canopy |
+| 3 | The plants | Eight full-screen scenes. The camera circles each plant, its story arrives line by line, then the product it becomes rises into view |
+| 4 | Leaf to bottle | A close view of one leaf, then the pack turns into frame |
 | 5 | Health areas | A large index. Hover shows a pack photo, a click filters the product list |
-| 6 | Products | Every product, grouped by brand, with filter, search and sort. A click opens pack sizes and prices |
+| 6 | Products | Every product, grouped by brand, with filter, search and sort. Cards lean towards the pointer. A click opens pack sizes and prices |
 | 7 | Export | The facility photo inside the booklet's curve, and what the division offers partners |
-| 8 | Close and footer | Closing line, wordmark, health notice |
+| 8 | Close and footer | The view over the forest, closing line, wordmark, health notice |
+
+Each picture dissolves into the next. On a computer the mouse wheel glides
+and the plants turn slightly with the pointer. Visitors who ask their device
+for less motion get the same content as a still page.
 
 ## What is in this repository
 
@@ -35,7 +40,7 @@ The plant leads and the product follows.
 | `docs/INSTALL-HOSTINGER.md` | Click-by-click install guide for a non-developer |
 | `private_app/` | Settings, database structure, starting content and shared PHP. Never reachable from the internet |
 | `public_html/` | The web root: the page, the admin, styles, scripts and fonts |
-| `seed/media/` | The facility photograph used in the export section |
+| `seed/media/` | The film: 12 short clips and their stills (hero, why, leaf, close, eight plants), plus the facility photograph |
 | `seed/product-images/` | 75 starter product photographs. The installer copies them into `uploads` |
 
 ## Run it on your own computer
@@ -48,12 +53,14 @@ cp private_app/config.sample.php private_app/config.php
 
 # 2. start PHP's built-in server
 cd public_html && php -S 127.0.0.1:8080
+# note: PHP's built-in server cannot seek inside video files, so the clips
+# will not follow the scroll locally. Apache, Nginx and Hostinger all can.
 
 # 3. open http://127.0.0.1:8080/admin/install.php and fill in the form
 ```
 
 The installer builds the tables, loads 71 products, 8 plants and all page text,
-copies the starter pictures, and creates your admin login. Delete
+copies the starter pictures and film, and creates your admin login. Delete
 `public_html/admin/install.php` once it says it is finished.
 
 ## Two rules that keep the site safe

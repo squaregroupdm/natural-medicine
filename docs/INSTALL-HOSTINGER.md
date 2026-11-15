@@ -262,7 +262,7 @@ Visit each of these:
 
 | Address | What you should see |
 |---|---|
-| `yourdomain.com` | The website, in English, with painted leaves behind the headline |
+| `yourdomain.com` | The website, in English, with a forest behind the headline |
 | `yourdomain.com/?lang=bn` | The same site in Bangla |
 | `yourdomain.com/admin/` | The sign-in screen |
 | `yourdomain.com/private_app/config.php` | **403 Forbidden** |
@@ -273,8 +273,8 @@ wrong place.
 
 Then scroll the whole site once, top to bottom, and check:
 
-- The plant cards draw themselves in as they appear
-- On a computer, the row of plants slides sideways while the screen holds still. On a phone you swipe it
+- Scrolling moves the camera through the forest and around each plant
+- Each plant ends with a product card that opens its details
 - The product cards show photographs, and clicking one opens its details
 - Clicking a health area filters the product list
 
@@ -321,7 +321,7 @@ Everything is editable at `yourdomain.com/admin/`.
 | Health areas | The filter names and their order |
 | Page text | Every headline and paragraph on the site |
 | Images | Upload new photographs |
-| Video | Three slots that take a video or a still picture |
+| Film | The full-screen scenes: each takes a still picture, a clip, or both |
 
 Every text box is a pair, English left and Bangla right. Leave the
 Bangla empty and the site shows English instead, so nothing ever appears

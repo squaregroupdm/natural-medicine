@@ -29,6 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'sort_order' => (int)$_POST['sort_order'],
             'is_visible' => isset($_POST['is_visible']) ? 1 : 0,
         ];
+        // the photograph and the clip, only changed when a new file is chosen
+        $notes = [];
+        $tag   = 'plant-' . slugify($f['name_en']);
+        if ($new = save_film_upload('image', 'image', $tag, $notes)) $f['image'] = $new;
+        if ($new = save_film_upload('video', 'video', $tag, $notes)) $f['video'] = $new;
+        if (isset($_POST['remove_video'])) $f['video'] = null;
         if ($id) {
             $set = implode(', ', array_map(fn($k) => "$k = :$k", array_keys($f)));
             run("UPDATE ingredients SET $set WHERE id = :id", $f + ['id' => $id]);
@@ -43,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = (int)db()->lastInsertId();
             log_activity('Added plant: ' . $f['name_en']);
         }
-        flash('Saved.');
+        flash($notes ? 'Saved, but: ' . implode(' ', $notes) : 'Saved.');
         redirect('ingredients.php?id=' . $id);
     }
 
@@ -59,21 +65,21 @@ if (isset($_GET['id']) || isset($_GET['new'])) {
     $g = isset($_GET['id']) ? q1('SELECT * FROM ingredients WHERE id = ?', [(int)$_GET['id']]) : null;
     if (!$g) $g = ['id'=>0,'plant_key'=>'basak','name_en'=>'','name_bn'=>'','botanical'=>'',
                    'part_en'=>'','part_bn'=>'','known_en'=>'','known_bn'=>'','does_en'=>'','does_bn'=>'',
-                   'product_id'=>null,'sort_order'=>999,'is_visible'=>1];
+                   'image'=>null,'video'=>null,'product_id'=>null,'sort_order'=>999,'is_visible'=>1];
 
     admin_head($g['id'] ? 'Edit plant' : 'New plant');
     ?>
     <p class="crumb"><a href="ingredients.php">All plants</a></p>
     <h1><?= $g['id'] ? e($g['name_en']) : 'New plant' ?></h1>
 
-    <form method="post" class="form">
+    <form method="post" class="form" enctype="multipart/form-data">
       <?= csrf_field() ?>
       <input type="hidden" name="action" value="save">
       <input type="hidden" name="id" value="<?= (int)$g['id'] ?>">
 
       <div class="row">
         <div class="field">
-          <label>Drawing <em>which line drawing appears on the card</em></label>
+          <label>Drawing <em>only used if there is no photograph</em></label>
           <select name="plant_key">
             <?php foreach ($plantKeys as $k): ?>
               <option value="<?= e($k) ?>"<?= $g['plant_key'] === $k ? ' selected' : '' ?>><?= e($k) ?></option>
@@ -90,6 +96,22 @@ if (isset($_GET['id']) || isset($_GET['new'])) {
       <?php lang_pair('Part used', 'part', $g['part_en'], $g['part_bn']); ?>
       <?php lang_pair('What people already know', 'known', $g['known_en'], $g['known_bn'], true); ?>
       <?php lang_pair('What it does', 'does', $g['does_en'], $g['does_bn'], true); ?>
+
+      <div class="row">
+        <div class="field">
+          <label>Photograph <em>JPG or WebP, wide (16:9). Plant to the right, dark space on the left for the words</em></label>
+          <?php if (!empty($g['image'])): ?><img class="vprev" src="../uploads/video/<?= e(rawurlencode($g['image'])) ?>" alt=""><?php endif; ?>
+          <input type="file" name="image" accept="image/jpeg,image/webp">
+        </div>
+        <div class="field">
+          <label>Clip <em>MP4, 4 to 6 seconds, silent, one slow camera move. It plays as the visitor scrolls</em></label>
+          <?php if (!empty($g['video'])): ?>
+            <video class="vprev" src="../uploads/video/<?= e(rawurlencode($g['video'])) ?>" muted loop playsinline controls preload="metadata"></video>
+            <label class="check"><input type="checkbox" name="remove_video" value="1"> Remove the clip and show only the photograph</label>
+          <?php endif; ?>
+          <input type="file" name="video" accept="video/mp4">
+        </div>
+      </div>
 
       <div class="row">
         <div class="field">

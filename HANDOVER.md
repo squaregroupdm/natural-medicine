@@ -10,7 +10,8 @@ and you should not need to ask anyone how it works.
 | Public website, English and Bangla | `public_html/index.php`, `assets/` | Finished and tested |
 | Admin (products, plants, health areas, page text, images, video) | `public_html/admin/` | Finished and tested |
 | Database structure and starting content | `private_app/schema.sql`, `seed_1.sql`, `seed_2.sql`, `copy_defaults.php` | 71 products, 17 health areas, 8 plants, 3 figures, 71 pieces of page text |
-| Starter pictures | `seed/` | 75 product photographs, 1 facility photograph |
+| Starter pictures | `seed/product-images/` | 75 product photographs |
+| Film | `seed/media/` | 12 clips and 12 stills (hero, why, leaf, close, 8 plants), 1 facility photograph. About 40 MB |
 | One-time installer | `public_html/admin/install.php` | Finished. Must be deleted after use |
 | Live server, domain, database | Hostinger account of the site owner | **Not set up by this repository.** See the checklist below |
 
@@ -52,18 +53,21 @@ Everything below is done at `/admin/` and needs no code.
 |---|---|
 | Change a price, pack, ingredient, description or photo | Products |
 | Hide a product without deleting it | Products, untick Visible |
-| Change the eight plants or which product each becomes | Plants |
+| Change a plant's words, photograph, clip, or which product it becomes | Plants |
 | Rename or reorder health areas | Health areas |
 | Change any headline, paragraph, button or menu label | Page text |
 | Upload product photographs | Images |
-| Add a background video or still | Video |
+| Change the forest scenes (hero, why, leaf, close) or the export picture | Film |
 
 Things worth knowing:
 
 - **Every text box is a pair,** English and Bangla. An empty Bangla box falls back to English, so nothing ever shows blank.
 - **Products are stored one row per pack size.** The site groups rows that share a brand and a form into one card and lists the packs inside it. To add a new pack size, add a product row with the same brand and form.
 - **The health area list hides empty areas** and counts product cards, not pack sizes.
-- **Video slots take a still picture, a video, or both.** `hero` plays behind the headline. `interlude` adds a full-screen band between health areas and products, and only exists when switched on. `export` fills the curved frame. MP4, 16:9, silent, under 8 MB. Video does not autoplay for visitors who ask for reduced motion or data saving.
+- **Every film scene takes a still, a clip, or both.** The four forest scenes are on the Film screen and the eight plant scenes are on the Plants screen. A clip does not play by itself. It moves forwards and backwards as the visitor scrolls. A scene with neither falls back to painted leaves, so the page never breaks.
+- **Making a replacement clip.** 16:9, 4 to 6 seconds, silent, one slow continuous camera move with no cuts, subject on the right and dark calm space on the left third. Then run it through ffmpeg once so that every frame is a keyframe, which is what lets it follow the scroll smoothly:
+  `ffmpeg -i in.mp4 -an -vf "scale=1280:720,fps=24" -c:v libx264 -crf 27 -g 1 -pix_fmt yuv420p -movflags +faststart out.mp4`
+  A clip that skips this step still works but moves in visible steps. Keep each file under the `max_upload_mb` value in `config.php` (12 by default).
 - **Product photographs** are resized to 1200 px on upload. Clean shots on a white or transparent background look best, because they sit on a white card.
 
 ## Where to change things in code
@@ -73,9 +77,9 @@ Things worth knowing:
 | A colour, font size, spacing or section gap | `public_html/assets/css/site.css`, section 2 (the `:root` block) |
 | The order of sections, or the markup of one | `public_html/index.php`. Each section is labelled with a comment |
 | The default wording, or add a new piece of text | `private_app/copy_defaults.php`. Add a row, call `copyText('section','key')` in `index.php`, then open Admin, Page text once and the new row appears |
-| Scroll behaviour, filters, product window | `public_html/assets/js/site.js`. Nine numbered parts, listed at the top |
-| The painted leaves | `public_html/assets/js/scene.js`. Colours in `PALETTE`, layouts in `PRESETS` |
-| A plant drawing, or add one | `public_html/assets/js/plants.js`. Paths on a 400 by 400 canvas. After adding one, add its key to `$plantKeys` at the top of `admin/ingredients.php` so it appears in the Drawing list |
+| Film scenes, weighted scrolling, card tilt, filters, product window | `public_html/assets/js/site.js`. Nine numbered parts, listed at the top. Part 4 is the film engine and opens with an explanation of how a scene works |
+| The painted leaves (shown only when a scene has no still or clip) | `public_html/assets/js/scene.js` |
+| A plant line drawing (legacy, not shown while plants have photographs) | `public_html/assets/js/plants.js`. Paths on a 400 by 400 canvas. After adding one, add its key to `$plantKeys` at the top of `admin/ingredients.php` so it appears in the Drawing list |
 | Database structure | `private_app/schema.sql`. There is no migration tool. For a live site, apply `ALTER TABLE` by hand in phpMyAdmin and update this file to match |
 | Shared PHP helpers | `private_app/bootstrap.php` (`q`, `q1`, `run`, `pick`, `copyText`, `digits`, `money`, CSRF, login) |
 
@@ -85,8 +89,10 @@ Design rules are in `docs/DESIGN.md`. Read it before changing the look.
 
 - `index.php` runs five queries, groups products in PHP, and prints the whole page. Product details for the pop-up window are printed once as JSON in a `<script type="application/json">` tag. There are no AJAX calls.
 - The page is complete without JavaScript. CSS only hides things for animation when `<html>` has the class `js`, which a one-line inline script adds.
-- Motion is hand-written, with no library. One `requestAnimationFrame` loop in `site.js` drives the hero depth, the sideways plant row and the leaf-to-bottle link. Everything else is CSS transitions started by an `IntersectionObserver`.
-- The sideways row is only pinned above 900 px and when the visitor has not asked for reduced motion. Otherwise it is a normal swipeable row.
+- Motion is hand-written, with no library. One `requestAnimationFrame` loop in `site.js` runs the film scenes: for each scene near the screen it works out how far through it the visitor is, sets the clip to that moment with `video.currentTime`, and writes the numbers `--p`, `--q`, `--o` and `--fade` onto the scene. The stylesheet does the rest from those numbers.
+- Scenes are tall blocks whose stage is `position: sticky`. Each one overlaps the one before by 160vh and fades in over it. The overlap is set in two places that must agree: `OVERLAP` and `FADE` in `site.js`, and the `-160vh` margin in `site.css`.
+- Clips load one at a time, shortly before they are needed, never all at once. Clips are not loaded at all for visitors who ask for reduced motion, who then get a normal still page.
+- The server must answer byte-range requests for MP4 files, or clips cannot seek. Apache and Nginx do this by default. PHP's built-in development server does not.
 - Bangla mode switches digits and currency (`৳`) in PHP (`digits()`, `money()`) and in `site.js` (`digits()`).
 
 ## Data and privacy
@@ -100,17 +106,19 @@ Design rules are in `docs/DESIGN.md`. Read it before changing the look.
 
 Content that still needs a person:
 
+0. **The plant pictures are AI-generated.** All 12 stills and clips were made with image and video models from botanical descriptions. They look right to a careful non-specialist, but someone on the herbal team must confirm each of the eight plants is the correct species and part before launch, or replace it with real photography from the Plants screen.
 1. **Bangla product indications.** The 71 "used for" descriptions exist in English only and currently fall back to English. They need a qualified medical translator, not machine translation.
 2. **Regulatory review.** Public indications and prices, and the three figures in "Why natural medicine" (especially the 2 million adverse drug reactions figure), should be cleared by regulatory affairs before launch. All are taken from the division's booklet.
 3. **Two products have no photograph:** D-Sitol and Probio R. They show a leaf placeholder.
 4. **Five products on the SQUARE website are not in the booklet** and so are not in the starting data: Carazol, Caroba, Laxisoft, Manli, Q-late. Their photographs are in `seed/product-images` if they are added.
 5. **Photography.** Several pack shots have a grey studio background that shows as a rectangle on the white card. Reshooting or cutting them out would lift the product list noticeably. The facility photograph is a low-resolution crop from the booklet and should be replaced with an original.
-6. **Background video.** Three slots are ready and empty. Until they are filled the site uses the painted leaves, which is a complete look on its own.
 7. **Official logo.** The top bar uses a text wordmark and a leaf mark. Replace with the official SQUARE Herbal & Ayurvedic logo when the file is available.
 8. **Contact details.** The booklet has none, so the footer has none. Add them in Admin, Page text, Footer, Contact line.
 
-Technical, for when there is time:
+Technical:
 
+0. **Test on real phones before launch.** The film was tested in desktop Chromium at computer, tablet and phone sizes. It has not been run on a physical iPhone or Android phone. Scroll-driven video is the part most likely to behave differently there. If it stutters on a device, the simplest fix is to skip the clip on small screens and show the still (one condition in `loadClip` in `site.js`).
+0. **Upgrading an older install.** The `ingredients` table gained a `video` column and the `videos` table has new slots. For a database made before this version, run `ALTER TABLE ingredients ADD video VARCHAR(255) NULL AFTER image;` and re-create the rows of `videos` from `seed_2.sql`. A fresh install needs nothing.
 1. Add a second admin role (editor without user management) if more people will log in.
 2. Add rate limiting to `admin/login.php`.
 3. Serve product photographs as WebP with a `srcset`.

@@ -208,6 +208,36 @@ function upload_url(?string $file, string $sub = 'products'): string
     return rtrim($CONFIG['base_url'], '/') . '/' . $CONFIG['upload_dir'] . '/' . $sub . '/' . rawurlencode($file);
 }
 
+/**
+ * Save one uploaded film file (a clip or its still) into uploads/video.
+ * $kind is "video" (MP4) or "image" (JPG or WebP).
+ * Returns the new file name, or null if nothing was uploaded. Problems
+ * are added to $notes in plain words.
+ */
+function save_film_upload(string $field, string $kind, string $prefix, array &$notes): ?string
+{
+    global $CONFIG;
+    if (empty($_FILES[$field]['name'])) return null;
+    if ($_FILES[$field]['error'] !== UPLOAD_ERR_OK) { $notes[] = 'The upload did not finish. The file may be too large for this server.'; return null; }
+
+    $dir = WEB_ROOT . '/' . $CONFIG['upload_dir'] . '/video';
+    if (!is_dir($dir)) @mkdir($dir, 0755, true);
+    $mime = (new finfo(FILEINFO_MIME_TYPE))->file($_FILES[$field]['tmp_name']);
+    $max  = (int)($CONFIG['max_upload_mb'] ?? 8);
+
+    if ($kind === 'video') {
+        if ($mime !== 'video/mp4') { $notes[] = 'The clip must be an MP4 file.'; return null; }
+        if ($_FILES[$field]['size'] > $max * 1024 * 1024) { $notes[] = "That clip is over $max MB. Please compress it first."; return null; }
+        $ext = 'mp4';
+    } else {
+        $ok = ['image/jpeg' => 'jpg', 'image/webp' => 'webp'];
+        if (!isset($ok[$mime])) { $notes[] = 'The picture must be a JPG or WebP.'; return null; }
+        $ext = $ok[$mime];
+    }
+    $name = $prefix . '-' . time() . '.' . $ext;
+    return move_uploaded_file($_FILES[$field]['tmp_name'], $dir . '/' . $name) ? $name : null;
+}
+
 /* ---------- a token that proves a form came from our own page ---------- */
 
 function csrf_token(): string
