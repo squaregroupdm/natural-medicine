@@ -493,8 +493,8 @@ section, .foot { position: relative; }
   .panel, .panel.low { align-self: flex-end; padding-bottom: clamp(40px, 8vh, 72px); }
   .cue, .dots { display: none; }
   .figs { grid-template-columns: 1fr; gap: 14px; margin-top: 24px; }
-  .fig { display: grid; grid-template-columns: 5.4em 1fr; gap: 14px; align-items: center; padding-top: 12px; }
-  .num, .fig:first-child .num { font-size: 2.6rem; flex-wrap: wrap; }
+  .fig { display: grid; grid-template-columns: 7.4rem 1fr; gap: 16px; align-items: center; padding-top: 12px; }
+  .num, .fig:first-child .num { font-size: 2rem; flex-wrap: wrap; }
   .note { margin-top: 0; font-size: .875rem; }
   .sources { display: none; }
   .panel.split { grid-template-columns: 1fr; gap: 22px; }
