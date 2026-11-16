@@ -33,6 +33,18 @@ no analytics, no outside fonts. The fonts are in `assets/fonts`.
 The click-by-click version of this, for a non-developer, is in
 `docs/INSTALL-HOSTINGER.md`.
 
+### Running it inside a folder (for example dm.squarepharma.com.bd/natural-medicine/)
+
+This is the planned first home and has been tested.
+
+1. Put the **contents** of `public_html/` into the folder that the address points at, for example `.../natural-medicine/`.
+2. Put `private_app/` and `seed/` one level **above** that folder if the server allows it, so they sit beside it and not inside it. `index.php` and the admin look for `../private_app/`.
+3. If they have to sit inside the web root, keep the `.htaccess` that ships in `private_app/` (Apache). On Nginx add a rule that denies `/private_app/` and `/seed/`. Then confirm in a browser that `/private_app/config.php` does not open.
+4. In `private_app/config.php` set `'base_url' => '/natural-medicine'` (the folder name, with a leading slash and no trailing slash).
+5. Open `/natural-medicine/admin/install.php`, then delete that file.
+
+Moving later to its own subdomain only needs `base_url` set back to an empty string.
+
 ### Deploying from GitHub
 
 The repository keeps `private_app` and `public_html` as sibling folders. A
