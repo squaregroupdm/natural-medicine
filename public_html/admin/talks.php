@@ -38,6 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? 'save';
     $id     = (int)($_POST['id'] ?? 0);
 
+    if ($action === 'delete_samples') {
+        run("DELETE FROM talks WHERE youtube_id = ''");
+        log_activity('Deleted the sample videos');
+        flash('The sample videos are gone.');
+        redirect('talks.php');
+    }
+
     if ($action === 'delete') {
         run('DELETE FROM talks WHERE id = ?', [$id]);
         log_activity('Deleted a video');
@@ -45,14 +52,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('talks.php');
     }
 
-    [$yt, $short] = youtube_id((string)($_POST['url'] ?? ''));
-    if ($yt === '') {
+    $url = trim((string)($_POST['url'] ?? ''));
+    [$yt, $short] = youtube_id($url);
+    if ($url !== '' && $yt === '') {
         flash('That does not look like a YouTube link. Copy the address from the browser or from the Share button.');
         redirect('talks.php' . ($id ? '?id=' . $id : ''));
     }
     $title = trim((string)($_POST['title_en'] ?? ''));
-    if ($title === '') $title = youtube_title($yt);
-    if ($title === '') $title = 'Untitled video';
+    if ($title === '' && $yt !== '') $title = youtube_title($yt);
+    if ($title === '') $title = $yt === '' ? 'Placeholder' : 'Untitled video';
 
     $f = [
         'kind'       => isset($kinds[$_POST['kind'] ?? '']) ? $_POST['kind'] : 'creator',
@@ -67,6 +75,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'sort_order' => (int)($_POST['sort_order'] ?? 0),
         'is_visible' => isset($_POST['is_visible']) ? 1 : 0,
     ];
+    // an optional picture of our own, used instead of the one from YouTube
+    $notes = [];
+    if ($new = save_film_upload('thumb', 'image', 'video-' . ($yt ?: 'card'), $notes)) $f['thumb'] = $new;
+    elseif (isset($_POST['remove_thumb'])) $f['thumb'] = null;
+
     if ($id) {
         $set = implode(', ', array_map(fn($k) => "$k = ?", array_keys($f)));
         run("UPDATE talks SET $set WHERE id = ?", [...array_values($f), $id]);
@@ -75,12 +88,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         run("INSERT INTO talks ($cols) VALUES (" . rtrim(str_repeat('?,', count($f)), ',') . ')', array_values($f));
     }
     log_activity(($id ? 'Edited' : 'Added') . ' video: ' . $title);
-    flash('Saved.');
+    flash($notes ? 'Saved, but: ' . implode(' ', $notes) : 'Saved.');
     redirect('talks.php');
 }
 
 $edit = isset($_GET['id']) ? q1('SELECT * FROM talks WHERE id = ?', [(int)$_GET['id']]) : null;
-$t    = $edit ?: ['id'=>0,'kind'=>$_GET['kind'] ?? 'creator','youtube_id'=>'','is_short'=>0,'title_en'=>'','title_bn'=>'',
+$t    = $edit ?: ['id'=>0,'kind'=>$_GET['kind'] ?? 'creator','youtube_id'=>'','thumb'=>null,'is_short'=>0,'title_en'=>'','title_bn'=>'',
                   'speaker_en'=>'','speaker_bn'=>'','need_id'=>null,'product_id'=>null,'sort_order'=>0,'is_visible'=>1];
 $list = q('SELECT * FROM talks ORDER BY kind, sort_order, id DESC');
 
@@ -90,16 +103,25 @@ admin_head('Videos');
 <p class="muted">Paste a YouTube link and the video appears on the site with its picture. Visitors play it without leaving the page.
    The three groups are separate shelves on the Videos page. A group with no videos is simply not shown.</p>
 
+<?php $samples = count(array_filter($list, fn($r) => $r['youtube_id'] === '')); if ($samples): ?>
+<form method="post" class="danger" style="margin:18px 0">
+  <?= csrf_field() ?>
+  <p><strong><?= $samples ?> sample video<?= $samples > 1 ? 's are' : ' is' ?> showing on the site.</strong>
+     They are placeholders with no real video, there so the sections can be seen. Replace them with real links or remove them before launch.</p>
+  <button type="submit" name="action" value="delete_samples" onclick="return confirm('Delete every sample video?')">Delete all samples</button>
+</form>
+<?php endif; ?>
+
 <section class="block">
   <h2><?= $t['id'] ? 'Edit video' : 'Add a video' ?></h2>
-  <form method="post" class="form">
+  <form method="post" class="form" enctype="multipart/form-data">
     <?= csrf_field() ?>
     <input type="hidden" name="id" value="<?= (int)$t['id'] ?>">
 
     <div class="row">
       <div class="field">
-        <label>YouTube link <em>a normal video, a Short, or a youtu.be link</em></label>
-        <input type="text" name="url" required placeholder="https://www.youtube.com/watch?v=..." value="<?= $t['youtube_id'] ? e('https://www.youtube.com/' . ($t['is_short'] ? 'shorts/' : 'watch?v=') . $t['youtube_id']) : '' ?>">
+        <label>YouTube link <em>a normal video, a Short, or a youtu.be link. Leave empty for a placeholder card</em></label>
+        <input type="text" name="url" placeholder="https://www.youtube.com/watch?v=..." value="<?= $t['youtube_id'] !== '' ? e('https://www.youtube.com/' . ($t['is_short'] ? 'shorts/' : 'watch?v=') . $t['youtube_id']) : '' ?>">
       </div>
       <div class="field">
         <label>Group</label>
@@ -127,6 +149,15 @@ admin_head('Videos');
       </div>
     </div>
 
+    <div class="field">
+      <label>Our own picture <em>optional. JPG or WebP, wide (16:9), or upright for a Short. Without one, the picture from YouTube is used</em></label>
+      <?php if (!empty($t['thumb'])): ?>
+        <img class="vprev" src="../uploads/video/<?= e(rawurlencode($t['thumb'])) ?>" alt="">
+        <label class="check"><input type="checkbox" name="remove_thumb" value="1"> Remove this picture</label>
+      <?php endif; ?>
+      <input type="file" name="thumb" accept="image/jpeg,image/webp">
+    </div>
+
     <div class="row">
       <div class="field narrow"><label>Order <em>lower shows first</em></label><input type="number" name="sort_order" value="<?= (int)$t['sort_order'] ?>"></div>
       <div class="field narrow"><label>Shape</label><label class="check"><input type="checkbox" name="is_short" value="1"<?= $t['is_short'] ? ' checked' : '' ?>> Upright (a Short)</label></div>
@@ -151,8 +182,8 @@ admin_head('Videos');
     <tbody>
     <?php foreach ($rows as $r): ?>
       <tr<?= $r['is_visible'] ? '' : ' class="hidden-row"' ?>>
-        <td style="width:110px"><img src="https://i.ytimg.com/vi/<?= e($r['youtube_id']) ?>/mqdefault.jpg" alt="" style="width:96px;border-radius:6px;display:block"></td>
-        <td><a href="talks.php?id=<?= (int)$r['id'] ?>"><strong><?= e($r['title_en']) ?></strong></a><?= $r['is_short'] ? ' <span class="muted">Short</span>' : '' ?></td>
+        <td style="width:110px"><img src="<?= $r['thumb'] ? '../uploads/video/' . e(rawurlencode($r['thumb'])) : 'https://i.ytimg.com/vi/' . e($r['youtube_id']) . '/mqdefault.jpg' ?>" alt="" style="width:96px;aspect-ratio:16/9;object-fit:cover;border-radius:6px;display:block"></td>
+        <td><a href="talks.php?id=<?= (int)$r['id'] ?>"><strong><?= e($r['title_en']) ?></strong></a><?= $r['is_short'] ? ' <span class="muted">Short</span>' : '' ?><?= $r['youtube_id'] === '' ? ' <span class="muted">(sample, no video)</span>' : '' ?></td>
         <td class="muted"><?= e((string)$r['speaker_en']) ?></td>
         <td class="muted"><?= (int)$r['sort_order'] ?></td>
         <td><a href="talks.php?id=<?= (int)$r['id'] ?>">Edit</a></td>

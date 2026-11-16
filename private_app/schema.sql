@@ -194,7 +194,8 @@ CREATE TABLE IF NOT EXISTS need_products (
 CREATE TABLE IF NOT EXISTS talks (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   kind        VARCHAR(20)  NOT NULL DEFAULT 'creator',
-  youtube_id  VARCHAR(20)  NOT NULL,
+  youtube_id  VARCHAR(20)  NOT NULL DEFAULT '',   -- empty means a placeholder card with no video yet
+  thumb       VARCHAR(255) NULL,               -- optional picture of our own (otherwise YouTube's is used)
   is_short    TINYINT(1) NOT NULL DEFAULT 0,   -- an upright YouTube Short
   title_en    VARCHAR(200) NOT NULL,
   title_bn    VARCHAR(260) NULL,

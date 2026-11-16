@@ -170,8 +170,12 @@
     var vh = window.innerHeight, vw = window.innerWidth;
   var mx = 0, my = 0, tx = 0, ty = 0;   // pointer position, raw and eased
 
-  var scenes = sceneEls.map(function (el, i) {
-    var next = sceneEls[i + 1];
+  /* a scene only dissolves over the one before it when the two touch */
+  function isScene(el) { return !!el && el.hasAttribute && el.hasAttribute('data-scene'); }
+
+  var scenes = sceneEls.map(function (el) {
+    var before = el.previousElementSibling, next = el.nextElementSibling;
+    while (before && before.classList.contains('anchor')) before = before.previousElementSibling;
     var roots = el.hasAttribute('data-roots');
     return {
       el: el,
@@ -182,8 +186,8 @@
       video: roots ? null : $('video[data-src]', el),
       counts: $$('[data-count]', el),
       orbit: el.hasAttribute('data-orbit'),
-      fades: i > 0 && !el.hasAttribute('data-solo'),
-      covered: !!next && !next.hasAttribute('data-solo') && !el.hasAttribute('data-last') && !el.hasAttribute('data-solo'),
+      fades: isScene(before) && !el.hasAttribute('data-solo'),
+      covered: isScene(next) && !next.hasAttribute('data-solo') && !el.hasAttribute('data-last') && !el.hasAttribute('data-solo'),
       top: 0, height: 0, time: 0, loaded: false, live: null, gone: null
     };
   });
@@ -258,9 +262,13 @@
     window.scrollTo({ top: s.top + (start + q * (1 - start)) * total, behavior: CALM ? 'auto' : 'smooth' });
   }
 
+  var progress = $('#progress');
+
   function tick() {
     var y = window.scrollY;
     tx += (mx - tx) * 0.07; ty += (my - ty) * 0.07;
+    /* the thin gold line under the top bar shows how far down the page you are */
+    if (progress) progress.style.transform = 'scaleX(' + clamp(y / Math.max(1, document.documentElement.scrollHeight - vh), 0, 1).toFixed(4) + ')';
 
     if (FILM) {
       scenes.forEach(function (s) {
@@ -581,7 +589,7 @@
     if (e.target === sheet) sheet.close();   // a click on the dimmed area closes it
 
     var vid = e.target.closest && e.target.closest('[data-video]');
-    if (vid) playVideo(vid.getAttribute('data-video'), vid.hasAttribute('data-short'));
+    if (vid) playVideo(vid.getAttribute('data-video'), vid.hasAttribute('data-short'), vid.getAttribute('data-sample'));
     if (e.target === player) player.close();
   });
 
@@ -594,8 +602,21 @@
   var player = $('#player');
   var playerBox = $('#playerBox');
 
-  function playVideo(id, upright) {
-    if (!player || !player.showModal || !/^[\w-]{6,20}$/.test(id)) return;
+  function playVideo(id, upright, samplePicture) {
+    if (!player || !player.showModal) return;
+    player.classList.toggle('short', !!upright);
+
+    /* a placeholder card has no video yet: show its picture and say so */
+    if (samplePicture !== null && id === '') {
+      playerBox.innerHTML = '';
+      if (samplePicture) { var pic = document.createElement('img'); pic.src = samplePicture; pic.alt = ''; playerBox.appendChild(pic); }
+      var note = document.createElement('p'); note.textContent = playerBox.getAttribute('data-sample') || '';
+      playerBox.appendChild(note);
+      if (!player.open) player.showModal();
+      return;
+    }
+
+    if (!/^[\w-]{6,20}$/.test(id)) return;
     var frame = document.createElement('iframe');
     frame.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0&playsinline=1';
     frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
@@ -603,7 +624,6 @@
     frame.title = 'YouTube';
     playerBox.innerHTML = '';
     playerBox.appendChild(frame);
-    player.classList.toggle('short', !!upright);
     if (!player.open) player.showModal();
   }
   if (player) player.addEventListener('close', function () { playerBox.innerHTML = ''; });

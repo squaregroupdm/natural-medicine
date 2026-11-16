@@ -169,6 +169,7 @@ section, .foot { position: relative; }
 [data-nav="light"] .nav { color: var(--ink); }
 [data-nav="light"] .nav::before { background: rgba(237, 242, 238, .82); border-color: var(--line-light); }
 .nav.hide { transform: translateY(-100%); }
+.progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--gold); transform: scaleX(0); transform-origin: 0 50%; pointer-events: none; }
 
 .brand { display: flex; align-items: center; gap: 12px; }
 .brand svg { width: 26px; height: 26px; fill: none; stroke: var(--gold); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -352,6 +353,10 @@ section, .foot { position: relative; }
 
 /* ---------- 8. Wellness Finder, video shelves, questions ---------- */
 
+/* a dark film scene that rises over the light section before it */
+.rise { position: relative; z-index: 4; margin-top: -44px; }
+.rise .stage { border-radius: 44px 44px 0 0; }
+
 /* a light section that rises over the dark one before it */
 .lift { position: relative; z-index: 3; margin-top: -44px; border-radius: 44px 44px 0 0; }
 .split-head { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: 32px clamp(32px, 8vw, 120px); align-items: end; }
@@ -422,6 +427,9 @@ section, .foot { position: relative; }
 .player.short { width: min(420px, calc(100vw - 28px), calc((100dvh - 80px) * 9 / 16)); }
 .player.short .player-box { aspect-ratio: 9 / 16; }
 .player iframe { width: 100%; height: 100%; border: 0; display: block; }
+.player-box { position: relative; }
+.player-box img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.45); }
+.player-box p { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: #fff; font: 400 clamp(1.2rem, 2.4vw, 1.9rem)/1.3 var(--display); text-wrap: balance; }
 .player .x { position: absolute; right: 0; top: -52px; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, .12); color: #fff; display: grid; place-items: center; transition: background .2s, transform .3s var(--ease); }
 .player .x:hover { background: var(--gold); color: var(--forest); transform: rotate(90deg); }
 .player .x svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
@@ -433,10 +441,11 @@ section, .foot { position: relative; }
 
 /* where to start, and questions */
 .start { padding: var(--gap) 0; }
+.start.catalogue { min-height: 0; }
 .start .shelf-head .display { max-width: 16ch; }
 .faq { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: clamp(28px, 6vw, 96px); margin-top: var(--gap); padding-top: clamp(40px, 6vw, 72px); border-top: 1px solid var(--line-light); align-items: start; }
 .grid + .faq, .shelf-head + .faq { margin-top: var(--gap); }
-.start > .wrap > .faq:first-child { margin-top: 0; border-top: 0; padding-top: 0; }
+.start > .wrap > .faq { margin-top: clamp(64px, 9vw, 130px); }
 .faq > *, .need > *, .split-head > * { min-width: 0; }
 .faq-list details { border-bottom: 1px solid var(--line-light); }
 .faq-list details:first-child { border-top: 1px solid var(--line-light); }
@@ -665,6 +674,8 @@ html[data-lang="bn"] .num { line-height: 1.15; letter-spacing: 0; }
   .root-tabs button { flex: 0 0 auto; padding-inline: 8px; }
   .points p { font-size: .875rem; }
   .lift { margin-top: -28px; border-radius: 28px 28px 0 0; }
+  .rise { margin-top: -28px; }
+  .rise .stage { border-radius: 28px 28px 0 0; }
   /* rows that scroll sideways under the thumb */
   .needs, .vids.row, .vids.row.two { overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; margin-inline: calc(var(--gut) * -1); padding-inline: var(--gut); scroll-padding-inline: var(--gut); }
   .needs::-webkit-scrollbar, .vids.row::-webkit-scrollbar { display: none; }

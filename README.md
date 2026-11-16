@@ -14,7 +14,8 @@ can be changed without touching code.
 
 The theme line is the map: **প্রকৃতির শিকড় থেকে প্রতিদিনের সুস্থতায়**, from nature's
 roots to everyday wellness. It follows the launch plan: establish the umbrella
-brand first, then bring in products through people's everyday needs.
+brand first, then bring in products through people's everyday needs. The need
+comes first on the page, then where the products come from.
 
 ### Home page
 
@@ -23,14 +24,15 @@ brand first, then bring in products through people's everyday needs.
 | 0 | Opening | On a first visit, three plant outlines draw themselves, then lift to reveal the film |
 | 1 | Hero | Brand, tagline and theme line. The camera pushes into a misty forest as you scroll |
 | 2 | Why natural | Three plain answers, with two supporting figures |
-| 3 | From the root | One pinned scene. Eight plants take turns: the camera circles each one, its story arrives, then the product it becomes rises into view |
-| 4 | Wellness Finder | "What would you like to support?" Five needs. Pick one to see the products that fit and who each is for |
+| 3 | Wellness Finder | "What would you like to support?" Five needs. Pick one to see the products that fit and who each is for |
+| 4 | Back to the root | One pinned scene. Eight plants take turns: the camera circles each one, its story arrives, then the product it becomes rises into view |
 | 5 | Trusted by Square | Three trust points, then doctors' videos |
 | 6 | Real routines | Creators' videos |
-| 7 | Where to start | The focus brands, then common questions |
+| 7 | Every product | The full list with filter, search and sort, then common questions |
 | 8 | Close and footer | Closing line over the forest, footer |
 
-Video sections only appear once videos have been added.
+The install comes with nine sample video cards so these sections can be seen.
+They are placeholders with no real video. Remove them in Admin, Videos before launch.
 
 ### Other pages
 

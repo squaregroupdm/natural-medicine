@@ -134,3 +134,18 @@ INSERT INTO faqs (q_en, q_bn, a_en, a_bn, sort_order) VALUES
 ('Can I take them with other medicines?','অন্য ওষুধের সঙ্গে কি এগুলো খাওয়া যায়?','Ask your physician or pharmacist first. Natural products can still interact with other medicines.','আগে চিকিৎসক বা ফার্মাসিস্টকে জিজ্ঞেস করুন। প্রাকৃতিক পণ্যও অন্য ওষুধের সঙ্গে বিক্রিয়া করতে পারে।',30),
 ('Are natural products right for everyone?','প্রাকৃতিক পণ্য কি সবার জন্য উপযুক্ত?','Natural does not mean right for everyone. During pregnancy, for children, or with a long-term condition, speak to a physician before starting.','প্রাকৃতিক মানেই সবার জন্য উপযুক্ত নয়। গর্ভাবস্থায়, শিশুদের ক্ষেত্রে বা দীর্ঘমেয়াদি অসুস্থতায় শুরু করার আগে চিকিৎসকের সঙ্গে কথা বলুন।',40),
 ('Are the prices on this site current?','এই সাইটের দাম কি হালনাগাদ?','They are the maximum retail prices in Bangladesh when this page was last updated. The price printed on the pack is the one that applies.','পাতাটি শেষবার হালনাগাদের সময় বাংলাদেশে সর্বোচ্চ খুচরা মূল্য এগুলোই ছিল। প্যাকের গায়ে লেখা দামই চূড়ান্ত।',50);
+
+-- ---------------- sample videos ----------------
+-- Placeholders so the video sections can be seen before real videos exist.
+-- They have no YouTube link and use the film stills as pictures.
+-- DELETE THESE BEFORE LAUNCH: Admin > Videos > "Delete all samples".
+INSERT INTO talks (kind, youtube_id, thumb, is_short, title_en, title_bn, speaker_en, speaker_bn, need_id, sort_order) VALUES
+('creator','','plant-amloki.jpg',0,'Sample: my morning routine','নমুনা: আমার সকালের রুটিন','Sample creator, food and nutrition','নমুনা ক্রিয়েটর, খাবার ও পুষ্টি',(SELECT id FROM needs WHERE slug='daily'),10),
+('creator','','plant-kalojira.jpg',0,'Sample: what I keep in my kitchen','নমুনা: আমার রান্নাঘরে যা থাকে','Sample creator, home cooking','নমুনা ক্রিয়েটর, ঘরোয়া রান্না',(SELECT id FROM needs WHERE slug='digestive'),20),
+('creator','','plant-brahmi.jpg',0,'Sample: staying focused through a long day','নমুনা: লম্বা দিনে মনোযোগ ধরে রাখা','Sample creator, lifestyle','নমুনা ক্রিয়েটর, লাইফস্টাইল',(SELECT id FROM needs WHERE slug='mind-women'),30),
+('creator','','plant-cranberry.jpg',0,'Sample: small habits that stayed','নমুনা: যে ছোট অভ্যাসগুলো রয়ে গেছে','Sample creator, family','নমুনা ক্রিয়েটর, পরিবার',NULL,40),
+('doctor','','why.jpg',0,'Sample: when does a supplement make sense?','নমুনা: সাপ্লিমেন্ট কখন দরকার?','Sample doctor, medicine specialist','নমুনা চিকিৎসক, মেডিসিন বিশেষজ্ঞ',NULL,10),
+('doctor','','plant-basak.jpg',0,'Sample: cough in the changing season','নমুনা: ঋতু বদলের কাশি','Sample doctor, chest physician','নমুনা চিকিৎসক, বক্ষব্যাধি বিশেষজ্ঞ',(SELECT id FROM needs WHERE slug='active'),20),
+('doctor','','leaf.jpg',0,'Sample: liver care in plain words','নমুনা: সহজ কথায় লিভারের যত্ন','Sample doctor, hepatologist','নমুনা চিকিৎসক, লিভার বিশেষজ্ঞ',(SELECT id FROM needs WHERE slug='beauty-liver'),30),
+('why','','hero.jpg',1,'Sample: natural or medicine?','নমুনা: প্রাকৃতিক না ওষুধ?',NULL,NULL,NULL,10),
+('why','','close.jpg',1,'Sample: prevention in one minute','নমুনা: এক মিনিটে প্রতিরোধ',NULL,NULL,NULL,20);

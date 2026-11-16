@@ -53,9 +53,9 @@ return [
   ['why', 'watch',   'Heading above the short videos', 'Why natural, in a minute', 'কেন প্রাকৃতিক, এক মিনিটে'],
 
   // ---- from the root (the plants) ----
-  ['materia', 'label',   'Section label', 'From the root', 'শিকড় থেকে'],
+  ['materia', 'label',   'Section label', 'Back to the root', 'ফিরে যাই শিকড়ে'],
   ['materia', 'title',   'Headline',      'Known first. Studied second.', 'আগে পরিচিত। পরে প্রমাণিত।'],
-  ['materia', 'hint',    'Small hint under the headline', 'Every product here begins as something that grows.', 'এখানকার প্রতিটি পণ্যের শুরু কোনো না কোনো গাছ থেকে।'],
+  ['materia', 'hint',    'Small hint under the headline', 'Each of these products began as something that grows. Meet the plant, then the medicine it becomes.', 'এই প্রতিটি পণ্যের শুরু কোনো না কোনো গাছ থেকে। আগে গাছটিকে চিনুন, তারপর যে ওষুধ সে হয়ে ওঠে।'],
   ['plate',   'becomes', 'Label above the product name',  'Becomes', 'যা হয়ে ওঠে'],
   ['plate',   'from',    'Starting price. Keep {price}',  'from {price}', '{price} থেকে'],
 
@@ -94,12 +94,12 @@ return [
   ['videos', 'all',       'Link to the videos page',    'All videos', 'সব ভিডিও'],
   ['videos', 'play',      'Play button label',          'Play video', 'ভিডিও চালান'],
   ['videos', 'empty',     'Message when there are no videos yet', 'Videos are on their way. Please check back soon.', 'ভিডিও আসছে শিগগিরই। আবার দেখে যান।'],
+  ['videos', 'sample',    'Shown when a placeholder card is opened', 'This is a sample. The real video will play here.', 'এটি একটি নমুনা। আসল ভিডিওটি এখানেই চলবে।'],
   ['videos', 'opinion',   'Note under the videos',      'Views shared in these videos are personal experiences, not medical advice.', 'এসব ভিডিওতে বলা কথা ব্যক্তিগত অভিজ্ঞতা, চিকিৎসা পরামর্শ নয়।'],
 
   // ---- products ----
   ['catalogue', 'label',    'Section label',                'The range', 'সম্পূর্ণ রেঞ্জ'],
   ['catalogue', 'title',    'Headline',                     'Every product, and what it is made from.', 'প্রতিটি পণ্য, আর যা থেকে তা তৈরি।'],
-  ['catalogue', 'featured', 'Home page heading',            'Where most people start.', 'বেশির ভাগ মানুষ যেখান থেকে শুরু করেন।'],
   ['catalogue', 'search',   'Search box placeholder',       'Search plant or product', 'উদ্ভিদ বা পণ্য খুঁজুন'],
   ['catalogue', 'all',      'First filter button',          'All', 'সব'],
   ['catalogue', 'areas',    'Name of the filter row, for screen readers', 'Health areas', 'স্বাস্থ্য ক্ষেত্র'],

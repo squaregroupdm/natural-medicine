@@ -113,7 +113,7 @@ function products_json(array $groups, array $byProduct, array $talks): string
         $gid = $t['product_id'] ? ($byProduct[(int)$t['product_id']] ?? null) : null;
         if ($gid === null) continue;
         foreach ($groups as &$g) {
-            if ($g['id'] === $gid) $g['videos'][] = ['id' => $t['youtube_id'], 'title' => pick($t, 'title'), 'short' => (int)$t['is_short']];
+            if ($g['id'] === $gid && $t['youtube_id'] !== '') $g['videos'][] = ['id' => $t['youtube_id'], 'title' => pick($t, 'title'), 'short' => (int)$t['is_short']];
         }
         unset($g);
     }
@@ -149,16 +149,82 @@ function product_card(array $g, int $order): string
 /** One video card. A click plays it in the on-page player. */
 function talk_card(array $t): string
 {
-    $id    = $t['youtube_id'];
+    $id    = (string)$t['youtube_id'];
     $title = pick($t, 'title');
     $who   = pick($t, 'speaker');
+    // our own picture if one was uploaded, otherwise the one YouTube made
+    $pic   = !empty($t['thumb']) ? upload_url($t['thumb'], 'video')
+           : ($id !== '' ? 'https://i.ytimg.com/vi/' . $id . '/hqdefault.jpg' : '');
     return '<li class="vid' . ($t['is_short'] ? ' short' : '') . '">'
-         . '<button type="button" data-video="' . e($id) . '"' . ($t['is_short'] ? ' data-short="1"' : '') . ' aria-label="' . e(copyText('videos', 'play') . ': ' . $title) . '">'
-         . '<span class="thumb"><img src="https://i.ytimg.com/vi/' . e($id) . '/hqdefault.jpg" alt="" loading="lazy" decoding="async">'
+         . '<button type="button" data-video="' . e($id) . '"' . ($t['is_short'] ? ' data-short="1"' : '')
+         . ($id === '' ? ' data-sample="' . e($pic) . '"' : '') . ' aria-label="' . e(copyText('videos', 'play') . ': ' . $title) . '">'
+         . '<span class="thumb">' . ($pic !== '' ? '<img src="' . e($pic) . '" alt="" loading="lazy" decoding="async">' : '')
          . '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23"/><path d="M20 16 L33 24 L20 32 Z"/></svg></span>'
          . '<b>' . e($title) . '</b>'
          . ($who !== '' ? '<small>' . e($who) . '</small>' : '')
          . '</button></li>';
+}
+
+/**
+ * The full product list with its filter bar, search and sort.
+ * Used on the home page and on products.php. $tag is the heading level.
+ */
+function catalogue_block(array $groups, string $tag = 'h2'): void
+{
+    $total = count($groups);
+    // only show filter buttons for health areas that have products
+    $has = [];
+    foreach ($groups as $g) if ($g['areaKey'] !== '') $has[$g['areaKey']] = true;
+    $areas = array_values(array_filter(
+        q('SELECT * FROM areas WHERE is_visible = 1 ORDER BY sort_order, name_en'),
+        fn($a) => isset($has[$a['slug']])
+    ));
+    ?>
+  <div class="cat">
+  <div class="wrap">
+    <p class="label" data-r><?= e(copyText('catalogue', 'label')) ?></p>
+    <<?= $tag ?> class="display" data-words><?= e(copyText('catalogue', 'title')) ?></<?= $tag ?>>
+  </div>
+
+  <div class="tools" id="tools">
+    <div class="wrap tools-in">
+      <div class="chips" id="chips" role="group" aria-label="<?= e(copyText('catalogue', 'areas')) ?>">
+        <button type="button" class="chip" data-area="" aria-pressed="true"><?= e(copyText('catalogue', 'all')) ?></button>
+        <?php foreach ($areas as $a): ?>
+          <button type="button" class="chip" data-area="<?= e($a['slug']) ?>" aria-pressed="false"><?= e(pick($a, 'name')) ?></button>
+        <?php endforeach; ?>
+      </div>
+      <div class="tools-end">
+        <label class="search">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3.5 3.5"/></svg>
+          <span class="sr"><?= e(copyText('catalogue', 'search')) ?></span>
+          <input type="search" id="search" placeholder="<?= e(copyText('catalogue', 'search')) ?>" autocomplete="off">
+        </label>
+        <label class="sort">
+          <span><?= e(copyText('catalogue', 'sort')) ?></span>
+          <select id="sort">
+            <option value="az"><?= e(copyText('catalogue', 'sort_az')) ?></option>
+            <option value="lo"><?= e(copyText('catalogue', 'sort_lo')) ?></option>
+            <option value="hi"><?= e(copyText('catalogue', 'sort_hi')) ?></option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <p class="count" id="count" aria-live="polite"
+       data-tpl="<?= e(copyText('catalogue', 'count')) ?>" data-total="<?= $total ?>"><?= e(copyText('catalogue', 'count', ['n' => digits((string)$total), 'total' => digits((string)$total)])) ?></p>
+
+    <ul class="grid" id="grid"><?php $n = 0; foreach ($groups as $g) echo product_card($g, ++$n); ?></ul>
+
+    <div class="empty" id="empty" hidden>
+      <p><?= e(copyText('catalogue', 'empty')) ?></p>
+      <button type="button" class="btn dark-btn" id="clear"><?= e(copyText('catalogue', 'clear')) ?></button>
+    </div>
+  </div>
+  </div>
+    <?php
 }
 
 /**
@@ -251,14 +317,15 @@ function page_nav(string $page): void
     $self = site_url($page === 'home' ? '' : $page . '.php');
     ?>
 <header class="nav" id="nav">
+  <i class="progress" id="progress" aria-hidden="true"></i>
   <a class="brand" href="<?= e($page === 'home' ? '#top' : site_url('')) ?>" aria-label="<?= e(copyText('brand', 'name')) ?>">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 C4 10 10 4 20 4 C20 14 14 20 4 20 Z M4 20 L14 10"/></svg>
     <span><b><?= e(copyText('brand', 'name')) ?></b><i><?= e(copyText('brand', 'org')) ?></i></span>
   </a>
 
   <nav class="links" id="menu" aria-label="Main">
-    <a href="<?= e($home) ?>#roots"><?= e(copyText('nav', 'plants')) ?></a>
     <a href="<?= e($home) ?>#finder"><?= e(copyText('nav', 'finder')) ?></a>
+    <a href="<?= e($home) ?>#roots"><?= e(copyText('nav', 'plants')) ?></a>
     <a href="<?= e(site_url('products.php')) ?>"<?= $page === 'products' ? ' aria-current="page"' : '' ?>><?= e(copyText('nav', 'products')) ?></a>
     <a href="<?= e(site_url('videos.php')) ?>"<?= $page === 'videos' ? ' aria-current="page"' : '' ?>><?= e(copyText('nav', 'videos')) ?></a>
   </nav>
@@ -293,8 +360,8 @@ function page_foot(string $page, string $json = ''): void
         <?php if (copyText('footer', 'contact') !== ''): ?><p class="contact"><?= nl2br(e(copyText('footer', 'contact'))) ?></p><?php endif; ?>
       </div>
       <nav aria-label="Footer">
-        <a href="<?= e($home) ?>#roots"><?= e(copyText('nav', 'plants')) ?></a>
         <a href="<?= e($home) ?>#finder"><?= e(copyText('nav', 'finder')) ?></a>
+        <a href="<?= e($home) ?>#roots"><?= e(copyText('nav', 'plants')) ?></a>
         <a href="<?= e(site_url('products.php')) ?>"><?= e(copyText('nav', 'products')) ?></a>
         <a href="<?= e(site_url('videos.php')) ?>"><?= e(copyText('nav', 'videos')) ?></a>
       </nav>
@@ -331,7 +398,7 @@ function page_foot(string $page, string $json = ''): void
 <!-- video player window -->
 <dialog class="player" id="player" aria-label="<?= e(copyText('videos', 'label')) ?>">
   <form method="dialog"><button class="x" aria-label="<?= e(copyText('product', 'close')) ?>"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 3 10 10M13 3 3 13"/></svg></button></form>
-  <div class="player-box" id="playerBox"></div>
+  <div class="player-box" id="playerBox" data-sample="<?= e(copyText('videos', 'sample')) ?>"></div>
 </dialog>
 
 <?= $json ?>

@@ -9,7 +9,7 @@ and you should not need to ask anyone how it works.
 |---|---|---|
 | Public website, English and Bangla, three pages | `public_html/index.php`, `products.php`, `videos.php`, `assets/` | Finished and tested |
 | Admin (products, plants, Wellness Finder, videos, questions, health areas, page text, images, film) | `public_html/admin/` | Finished and tested |
-| Database structure and starting content | `private_app/schema.sql`, `seed_1.sql`, `seed_2.sql`, `copy_defaults.php` | 71 products, 17 health areas, 8 plants, 5 needs, 5 questions, 92 pieces of page text. No videos: those are added by pasting YouTube links |
+| Database structure and starting content | `private_app/schema.sql`, `seed_1.sql`, `seed_2.sql`, `copy_defaults.php` | 71 products, 17 health areas, 8 plants, 5 needs, 5 questions, 92 pieces of page text, 9 sample video cards to be replaced with real YouTube links |
 | Starter pictures | `seed/product-images/` | 75 product photographs |
 | Film | `seed/media/` | 12 clips and 12 stills (hero, why, leaf, close, 8 plants), 1 facility photograph. About 40 MB |
 | One-time installer | `public_html/admin/install.php` | Finished. Must be deleted after use |
@@ -77,7 +77,7 @@ Everything below is done at `/admin/` and needs no code.
 
 Things worth knowing:
 
-- **Videos.** Paste any normal YouTube address (watch, youtu.be or Shorts). The picture comes from YouTube, and the title too if you leave it empty and the server can reach YouTube. There are three groups: Real routines, Doctors explain, Why natural. A group with no videos is not shown anywhere, so the site looks complete with none.
+- **Videos.** A video can also have a picture of your own, used in place of the one from YouTube. Paste any normal YouTube address (watch, youtu.be or Shorts). The picture comes from YouTube, and the title too if you leave it empty and the server can reach YouTube. There are three groups: Real routines, Doctors explain, Why natural. A group with no videos is not shown anywhere, so the site looks complete with none.
 - **Tagging a video.** Tag it to a need and it also appears under that need in the Wellness Finder. Tag it to a product and it also appears in that product's window.
 - **The Wellness Finder is a guide, not a quiz with scoring.** Each need lists products with one "good for" line each. Those lines are written to stay inside each product's listed uses. Keep it that way when editing.
 - **Every text box is a pair,** English and Bangla. An empty Bangla box falls back to English, so nothing ever shows blank.
@@ -132,7 +132,7 @@ Content that still needs a person:
 0. **The brand is a draft.** "Square Naturals" and "Natural Wellness. Trusted by Square." come from the launch plan and are waiting on the agency's direction. Name, tagline and theme line are three boxes in Admin, Page text, Brand. Colours are in section 2 of `site.css`.
 0. **Two focus brands are missing.** Relibalm and Collagen are in the launch plan but not in the product data. Add them under Products, tick Featured, then add them to a need under Wellness Finder.
 0. **One placement differs from the plan.** The plan lists Bioprem under digestive wellness. It is biotin for hair and nails, so the site places it under Beauty and liver care. Move it in Wellness Finder if that was intended.
-0. **No videos yet.** The Videos page shows a short "on their way" message until the first link is added.
+0. **Sample videos must be removed.** The install seeds nine placeholder video cards, titled "Sample", using the film stills as pictures. They have no video behind them. Admin, Videos shows a red box with a "Delete all samples" button. Do this, or replace each with a real link, before launch.
 0. **Wording to review.** The "Why natural" answers, the Wellness Finder lines, the trust points and the five questions were written for this build. Regulatory should read them, and confirm that creators may speak about these products in public.
 0. **The plant pictures are AI-generated.** All 12 stills and clips were made with image and video models from botanical descriptions. They look right to a careful non-specialist, but someone on the herbal team must confirm each of the eight plants is the correct species and part before launch, or replace it with real photography from the Plants screen.
 1. **Bangla product indications.** The 71 "used for" descriptions exist in English only and currently fall back to English. They need a qualified medical translator, not machine translation.
