@@ -1,9 +1,10 @@
 # Design notes
 
-The idea in one line: **a walk into the forest.** The first half of the page
-is film. Scrolling moves a camera into a misty forest, then around each plant
-in turn, and each plant ends with the product it becomes. The second half is
-plain and fast, because people who came to find a product should find it.
+The idea in one line: **from nature's roots to everyday wellness.** The page
+travels the way the theme line does. It opens on line drawings, moves into a
+forest on film, circles the plants one by one, and then arrives in ordinary
+life: a plain, light section that asks what you want to support and shows what
+fits. Film is for the story. Plain and fast is for finding a product.
 
 Keep to these rules and later changes will look like they belong.
 
@@ -42,6 +43,11 @@ height. Those overrides sit together near the end of the stylesheet under
 - Sections are deliberately off-centre: headline left, supporting text or picture right, figures on an uneven grid.
 - The story is dark throughout. The product list is light, joined to it by the sweeping curve from the booklet cover.
 - Each section sets its own background. The top bar reads `data-tone` from the section beneath it.
+
+## Line drawings
+
+- Used in two places only: the opening, where three plants draw themselves, and as the small icons on the Wellness Finder buttons.
+- Thin, single weight, no fill to speak of. Teal on light, gold for the one that is selected.
 
 ## Film
 

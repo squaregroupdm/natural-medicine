@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Set up | Natural Medicine</title>
+<title>Set up | Square Naturals</title>
 <link rel="stylesheet" href="admin.css">
 </head>
 <body class="login-body">
@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php else: ?>
   <form class="login" method="post">
-    <h1>Set up <span>Natural Medicine</span></h1>
+    <h1>Set up <span>Square Naturals</span></h1>
     <p class="sub">This builds the database and creates your login. It only needs doing once.</p>
 
     <?php if ($errors): ?>

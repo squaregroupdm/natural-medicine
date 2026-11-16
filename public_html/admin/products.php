@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'uses_bn'    => trim((string)$_POST['uses_bn']),
             'image'      => trim((string)$_POST['image']),
             'is_visible' => isset($_POST['is_visible']) ? 1 : 0,
+            'is_featured'=> isset($_POST['is_featured']) ? 1 : 0,
             'sort_order' => (int)$_POST['sort_order'],
         ];
 
@@ -82,7 +83,7 @@ if ($editing) {
     if (!$p) {
         $p = ['id'=>0,'brand'=>'','form_en'=>'','form_bn'=>'','source_en'=>'','source_bn'=>'',
               'pack'=>'','mrp'=>0,'area_id'=>null,'uses_en'=>'','uses_bn'=>'','image'=>'',
-              'is_visible'=>1,'sort_order'=>999];
+              'is_visible'=>1,'is_featured'=>0,'sort_order'=>999];
     }
     $images = q("SELECT filename FROM media WHERE kind='image' ORDER BY filename");
     // Keep whatever image this product already uses in the list, even if
@@ -140,6 +141,10 @@ if ($editing) {
         <div class="field narrow">
           <label>Show on the site</label>
           <label class="check"><input type="checkbox" name="is_visible" value="1"<?= $p['is_visible'] ? ' checked' : '' ?>> Visible</label>
+        </div>
+        <div class="field narrow">
+          <label>Focus brand <em>listed first, and on the home page</em></label>
+          <label class="check"><input type="checkbox" name="is_featured" value="1"<?= !empty($p['is_featured']) ? ' checked' : '' ?>> Featured</label>
         </div>
       </div>
 

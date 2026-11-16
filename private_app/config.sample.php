@@ -16,7 +16,7 @@ return [
   'db_pass' => 'PUT_YOUR_DATABASE_PASSWORD_HERE',
 
   // ---- The website ----
-  'site_name'      => 'Natural Medicine',
+  'site_name'      => 'Square Naturals',
   'default_lang'   => 'en',          // 'en' or 'bn'
   'base_url'       => '',            // leave empty unless in a subfolder
 

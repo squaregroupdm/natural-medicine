@@ -7,9 +7,9 @@ and you should not need to ask anyone how it works.
 
 | Item | Where | State |
 |---|---|---|
-| Public website, English and Bangla | `public_html/index.php`, `assets/` | Finished and tested |
-| Admin (products, plants, health areas, page text, images, video) | `public_html/admin/` | Finished and tested |
-| Database structure and starting content | `private_app/schema.sql`, `seed_1.sql`, `seed_2.sql`, `copy_defaults.php` | 71 products, 17 health areas, 8 plants, 3 figures, 71 pieces of page text |
+| Public website, English and Bangla, three pages | `public_html/index.php`, `products.php`, `videos.php`, `assets/` | Finished and tested |
+| Admin (products, plants, Wellness Finder, videos, questions, health areas, page text, images, film) | `public_html/admin/` | Finished and tested |
+| Database structure and starting content | `private_app/schema.sql`, `seed_1.sql`, `seed_2.sql`, `copy_defaults.php` | 71 products, 17 health areas, 8 plants, 5 needs, 5 questions, 92 pieces of page text. No videos: those are added by pasting YouTube links |
 | Starter pictures | `seed/product-images/` | 75 product photographs |
 | Film | `seed/media/` | 12 clips and 12 stills (hero, why, leaf, close, 8 plants), 1 facility photograph. About 40 MB |
 | One-time installer | `public_html/admin/install.php` | Finished. Must be deleted after use |
@@ -66,13 +66,20 @@ Everything below is done at `/admin/` and needs no code.
 | Change a price, pack, ingredient, description or photo | Products |
 | Hide a product without deleting it | Products, untick Visible |
 | Change a plant's words, photograph, clip, or which product it becomes | Plants |
-| Rename or reorder health areas | Health areas |
-| Change any headline, paragraph, button or menu label | Page text |
+| Change the five needs, their wording, or which products answer each | Wellness Finder |
+| Add a video from a YouTube link, order it, tag it to a need or a product | Videos |
+| Add or edit the common questions | Questions |
+| Mark a product as a focus brand | Products, tick Featured |
+| Rename or reorder the filter buttons on the Products page | Health areas |
+| Change the brand name, tagline, or any headline, paragraph, button or menu label | Page text |
 | Upload product photographs | Images |
 | Change the forest scenes (hero, why, leaf, close) or the export picture | Film |
 
 Things worth knowing:
 
+- **Videos.** Paste any normal YouTube address (watch, youtu.be or Shorts). The picture comes from YouTube, and the title too if you leave it empty and the server can reach YouTube. There are three groups: Real routines, Doctors explain, Why natural. A group with no videos is not shown anywhere, so the site looks complete with none.
+- **Tagging a video.** Tag it to a need and it also appears under that need in the Wellness Finder. Tag it to a product and it also appears in that product's window.
+- **The Wellness Finder is a guide, not a quiz with scoring.** Each need lists products with one "good for" line each. Those lines are written to stay inside each product's listed uses. Keep it that way when editing.
 - **Every text box is a pair,** English and Bangla. An empty Bangla box falls back to English, so nothing ever shows blank.
 - **Products are stored one row per pack size.** The site groups rows that share a brand and a form into one card and lists the packs inside it. To add a new pack size, add a product row with the same brand and form.
 - **The health area list hides empty areas** and counts product cards, not pack sizes.
@@ -87,7 +94,9 @@ Things worth knowing:
 | To change | Edit |
 |---|---|
 | A colour, font size, spacing or section gap | `public_html/assets/css/site.css`, section 2 (the `:root` block) |
-| The order of sections, or the markup of one | `public_html/index.php`. Each section is labelled with a comment |
+| The order of sections on the home page, or the markup of one | `public_html/index.php`. Each section is labelled with a comment |
+| The top bar, footer, product card, video card or the two pop-up windows | `private_app/site_parts.php`. All three pages use it |
+| The Products or Videos page | `public_html/products.php`, `public_html/videos.php` |
 | The default wording, or add a new piece of text | `private_app/copy_defaults.php`. Add a row, call `copyText('section','key')` in `index.php`, then open Admin, Page text once and the new row appears |
 | Film scenes, weighted scrolling, card tilt, filters, product window | `public_html/assets/js/site.js`. Nine numbered parts, listed at the top. Part 4 is the film engine and opens with an explanation of how a scene works |
 | The painted leaves (shown only when a scene has no still or clip) | `public_html/assets/js/scene.js` |
@@ -99,9 +108,10 @@ Design rules are in `docs/DESIGN.md`. Read it before changing the look.
 
 ### How the pieces fit
 
-- `index.php` runs five queries, groups products in PHP, and prints the whole page. Product details for the pop-up window are printed once as JSON in a `<script type="application/json">` tag. There are no AJAX calls.
+- Each page requires `private_app/site_parts.php`, loads what it needs, and prints itself. Products are grouped in PHP (`load_groups()`). Product details for the pop-up window are printed once as JSON in a `<script type="application/json">` tag. There are no AJAX calls.
 - The page is complete without JavaScript. CSS only hides things for animation when `<html>` has the class `js`, which a one-line inline script adds.
 - Motion is hand-written, with no library. One `requestAnimationFrame` loop in `site.js` runs the film scenes: for each scene near the screen it works out how far through it the visitor is, sets the clip to that moment with `video.currentTime`, and writes the numbers `--p`, `--q`, `--o` and `--fade` onto the scene. The stylesheet does the rest from those numbers.
+- The plant section is one scene holding eight clips. `plantStage()` in `site.js` shares the scroll between them and cross-fades from one to the next.
 - Scenes are tall blocks whose stage is `position: sticky`. Each one overlaps the one before by 160vh and fades in over it. The overlap is set in two places that must agree: `OVERLAP` and `FADE` in `site.js`, and the `-160vh` margin in `site.css`.
 - Clips load one at a time, shortly before they are needed, never all at once. Clips are not loaded at all for visitors who ask for reduced motion, who then get a normal still page.
 - The server must answer byte-range requests for MP4 files, or clips cannot seek. Apache and Nginx do this by default. PHP's built-in development server does not.
@@ -109,7 +119,8 @@ Design rules are in `docs/DESIGN.md`. Read it before changing the look.
 
 ## Data and privacy
 
-- The public site collects nothing. No forms, no analytics, no tracking. It sets one cookie, `sqnm_lang`, to remember the language.
+- The public site collects nothing. No forms, no analytics, no tracking. It sets one cookie, `sqnm_lang`, to remember the language, and one browser-session note so the opening drawing plays once per visit.
+- Video pictures are loaded from YouTube's image server. The video itself loads from `youtube-nocookie.com` only when a visitor presses play. If a cookie or privacy policy is required for embedded YouTube, add it before launch.
 - The admin stores a name, email and password hash per user (`password_hash`), and a plain activity log of who changed what.
 - All admin forms carry a CSRF token. Uploads are checked by content type, images are re-encoded through GD, and PHP execution is switched off inside `uploads/`.
 - There is one admin role. Every user can change everything.
@@ -118,6 +129,11 @@ Design rules are in `docs/DESIGN.md`. Read it before changing the look.
 
 Content that still needs a person:
 
+0. **The brand is a draft.** "Square Naturals" and "Natural Wellness. Trusted by Square." come from the launch plan and are waiting on the agency's direction. Name, tagline and theme line are three boxes in Admin, Page text, Brand. Colours are in section 2 of `site.css`.
+0. **Two focus brands are missing.** Relibalm and Collagen are in the launch plan but not in the product data. Add them under Products, tick Featured, then add them to a need under Wellness Finder.
+0. **One placement differs from the plan.** The plan lists Bioprem under digestive wellness. It is biotin for hair and nails, so the site places it under Beauty and liver care. Move it in Wellness Finder if that was intended.
+0. **No videos yet.** The Videos page shows a short "on their way" message until the first link is added.
+0. **Wording to review.** The "Why natural" answers, the Wellness Finder lines, the trust points and the five questions were written for this build. Regulatory should read them, and confirm that creators may speak about these products in public.
 0. **The plant pictures are AI-generated.** All 12 stills and clips were made with image and video models from botanical descriptions. They look right to a careful non-specialist, but someone on the herbal team must confirm each of the eight plants is the correct species and part before launch, or replace it with real photography from the Plants screen.
 1. **Bangla product indications.** The 71 "used for" descriptions exist in English only and currently fall back to English. They need a qualified medical translator, not machine translation.
 2. **Regulatory review.** Public indications and prices, and the three figures in "Why natural medicine" (especially the 2 million adverse drug reactions figure), should be cleared by regulatory affairs before launch. All are taken from the division's booklet.
@@ -130,7 +146,7 @@ Content that still needs a person:
 Technical:
 
 0. **Test on real phones before launch.** The film was tested in desktop Chromium at computer, tablet and phone sizes. It has not been run on a physical iPhone or Android phone. Scroll-driven video is the part most likely to behave differently there. If it stutters on a device, the simplest fix is to skip the clip on small screens and show the still (one condition in `loadClip` in `site.js`).
-0. **Upgrading an older install.** The `ingredients` table gained a `video` column and the `videos` table has new slots. For a database made before this version, run `ALTER TABLE ingredients ADD video VARCHAR(255) NULL AFTER image;` and re-create the rows of `videos` from `seed_2.sql`. A fresh install needs nothing.
+0. **Upgrading an older install.** This version adds four tables (`needs`, `need_products`, `talks`, `faqs`) and two columns (`ingredients.video`, `products.is_featured`). There is no migration tool, so the simplest path for a site that is not live yet is a fresh install on an empty database. A fresh install needs nothing extra.
 1. Add a second admin role (editor without user management) if more people will log in.
 2. Add rate limiting to `admin/login.php`.
 3. Serve product photographs as WebP with a `srcset`.

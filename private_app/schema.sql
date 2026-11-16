@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS products (
   uses_bn     TEXT NULL,
   image       VARCHAR(255) NULL,
   is_visible  TINYINT(1) NOT NULL DEFAULT 1,
+  is_featured TINYINT(1) NOT NULL DEFAULT 0,       -- a focus brand: shown first, and on the home page
   sort_order  INT NOT NULL DEFAULT 0,
   updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY idx_area (area_id),
@@ -153,4 +154,69 @@ CREATE TABLE IF NOT EXISTS activity (
   user_id    INT UNSIGNED NULL,
   what       VARCHAR(255) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- needs: the everyday wellness needs in the Wellness Finder
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS needs (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  slug        VARCHAR(80)  NOT NULL UNIQUE,
+  name_en     VARCHAR(120) NOT NULL,           -- "Digestive comfort"
+  name_bn     VARCHAR(160) NULL,
+  line_en     VARCHAR(255) NULL,               -- one short line under the name
+  line_bn     VARCHAR(320) NULL,
+  body_en     TEXT NULL,                       -- a sentence or two about the everyday moment
+  body_bn     TEXT NULL,
+  plant_key   VARCHAR(40)  NULL,               -- which line drawing is its icon
+  sort_order  INT NOT NULL DEFAULT 0,
+  is_visible  TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- which products answer a need, and who each one is for
+CREATE TABLE IF NOT EXISTS need_products (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  need_id     INT UNSIGNED NOT NULL,
+  product_id  INT UNSIGNED NOT NULL,
+  for_en      VARCHAR(255) NULL,               -- "Fibre husk for regular digestion."
+  for_bn      VARCHAR(320) NULL,
+  sort_order  INT NOT NULL DEFAULT 0,
+  KEY idx_need (need_id),
+  CONSTRAINT fk_np_need    FOREIGN KEY (need_id)    REFERENCES needs(id)    ON DELETE CASCADE,
+  CONSTRAINT fk_np_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- talks: YouTube videos shown on the Videos page and around the site
+-- kind: creator (people using the products), doctor (doctors explaining),
+--       why (short "why natural" explainers)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS talks (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  kind        VARCHAR(20)  NOT NULL DEFAULT 'creator',
+  youtube_id  VARCHAR(20)  NOT NULL,
+  is_short    TINYINT(1) NOT NULL DEFAULT 0,   -- an upright YouTube Short
+  title_en    VARCHAR(200) NOT NULL,
+  title_bn    VARCHAR(260) NULL,
+  speaker_en  VARCHAR(160) NULL,               -- who is talking
+  speaker_bn  VARCHAR(200) NULL,
+  need_id     INT UNSIGNED NULL,
+  product_id  INT UNSIGNED NULL,
+  sort_order  INT NOT NULL DEFAULT 0,
+  is_visible  TINYINT(1) NOT NULL DEFAULT 1,
+  created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_kind (kind)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- faqs: common questions on the home page
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS faqs (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  q_en        VARCHAR(255) NOT NULL,
+  q_bn        VARCHAR(320) NULL,
+  a_en        TEXT NOT NULL,
+  a_bn        TEXT NULL,
+  sort_order  INT NOT NULL DEFAULT 0,
+  is_visible  TINYINT(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

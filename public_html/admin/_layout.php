@@ -9,6 +9,9 @@ function admin_head(string $title): void
         'index.php'       => 'Dashboard',
         'products.php'    => 'Products',
         'ingredients.php' => 'Plants',
+        'needs.php'       => 'Wellness Finder',
+        'talks.php'       => 'Videos',
+        'faqs.php'        => 'Questions',
         'areas.php'       => 'Health areas',
         'copy.php'        => 'Page text',
         'media.php'       => 'Images',
@@ -20,12 +23,12 @@ function admin_head(string $title): void
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title><?= e($title) ?> · Natural Medicine admin</title>
+<title><?= e($title) ?> · Square Naturals admin</title>
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
 <header class="bar">
-  <div class="bar-brand">SQUARE <span>Natural Medicine</span></div>
+  <div class="bar-brand">Square <span>Naturals</span></div>
   <nav class="bar-nav">
     <?php foreach ($nav as $file => $label): ?>
       <a href="<?= e($file) ?>"<?= $here === $file ? ' class="on"' : '' ?>><?= e($label) ?></a>

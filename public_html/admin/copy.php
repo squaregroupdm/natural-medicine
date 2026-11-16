@@ -25,23 +25,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $added = sync_copy();   // picks up any wording added in copy_defaults.php
-$rows  = q('SELECT * FROM copy ORDER BY sort_order, id');
+// wording from an older version of the site that no page uses any more is not listed
+$live = [];
+foreach (copy_defaults() as $d) $live[$d[0] . '.' . $d[1]] = true;
+$rows  = array_values(array_filter(q('SELECT * FROM copy ORDER BY sort_order, id'), fn($r) => isset($live[$r['section'] . '.' . $r['k']])));
 $figs = q('SELECT * FROM figures ORDER BY sort_order');
 
 $bySection = [];
 foreach ($rows as $r) $bySection[$r['section']][] = $r;
 
 $titles = [
+    'brand'     => 'Brand name and tagline',
     'nav'       => 'Top bar',
     'hero'      => 'Opening screen',
-    'plate'     => 'Plant cards',
-    'why'       => 'Why natural medicine',
-    'materia'   => 'The plants row',
-    'topack'    => 'Leaf to bottle',
-    'areas'     => 'Health areas',
+    'why'       => 'Why natural',
+    'materia'   => 'From the root (the plants)',
+    'plate'     => 'Plant product card',
+    'finder'    => 'Wellness Finder',
+    'trust'     => 'Trusted by Square',
+    'videos'    => 'Videos',
     'catalogue' => 'Product list',
     'product'   => 'Product detail window',
-    'export'    => 'Export section',
+    'faq'       => 'Questions',
     'close'     => 'Closing screen',
     'footer'    => 'Footer',
 ];
@@ -86,7 +91,7 @@ admin_head('Page text');
 
   <section class="block">
     <h2>The three statistics</h2>
-    <p class="muted">These count up from zero as the visitor scrolls. A figure ending in % is also drawn as ten leaves.</p>
+    <p class="muted">These count up from zero as the visitor scrolls. They appear as a line of proof under the three answers in "Why natural".</p>
     <?php foreach ($figs as $f): ?>
       <div class="field">
         <div class="row">

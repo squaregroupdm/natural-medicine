@@ -1,4 +1,4 @@
-# Installing on Hostinger, step by step
+# Installing Square Naturals on Hostinger, step by step
 
 Written for someone who has never set up a website before. Every click
 is spelled out. Nothing is assumed.
@@ -262,7 +262,7 @@ Visit each of these:
 
 | Address | What you should see |
 |---|---|
-| `yourdomain.com` | The website, in English, with a forest behind the headline |
+| `yourdomain.com` | The website, in English. Plant outlines draw themselves, then a forest appears behind the headline |
 | `yourdomain.com/?lang=bn` | The same site in Bangla |
 | `yourdomain.com/admin/` | The sign-in screen |
 | `yourdomain.com/private_app/config.php` | **403 Forbidden** |

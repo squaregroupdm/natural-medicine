@@ -33,12 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Sign in · Natural Medicine admin</title>
+<title>Sign in · Square Naturals admin</title>
 <link rel="stylesheet" href="admin.css">
 </head>
 <body class="login-body">
 <form class="login" method="post">
-  <h1>SQUARE <span>Natural Medicine</span></h1>
+  <h1>Square <span>Naturals</span></h1>
   <p class="sub">Sign in to edit the website.</p>
   <?php if ($error): ?><div class="error"><?= e($error) ?></div><?php endif; ?>
   <?= csrf_field() ?>
