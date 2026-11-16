@@ -167,8 +167,29 @@
   var FADE = 0.6;        // screens over which a scene dissolves in
   var sceneEls = $$('[data-scene]');
   var FILM = sceneEls.length > 0 && !CALM;
-    var vh = window.innerHeight, vw = window.innerWidth;
+  var vh = window.innerHeight, vw = window.innerWidth;
+  var winH = vh;                        // the visible height (vh is the stage height, which a phone's address bar does not change)
   var mx = 0, my = 0, tx = 0, ty = 0;   // pointer position, raw and eased
+  var sy = window.scrollY;              // scroll position, eased: this is what the scenes follow
+  var dt = 16.7, lastTick = 0;          // ms since the previous frame
+
+  /* How far to move towards a target this frame so that it is "tau" ms
+     behind. Using real time keeps the feel the same on 60, 90 and 120 Hz
+     screens and when a frame arrives late. */
+  function ease(tau) { return 1 - Math.exp(-dt / tau); }
+
+  /* write a number onto an element only when it has changed, so a page
+     at rest costs nothing */
+  function put(holder, name, value) {
+    if (!holder || holder.css[name] === value) return;
+    holder.css[name] = value;
+    holder.el.style.setProperty(name, value);
+  }
+
+  /* The numbers are written onto the few elements that use them (the
+     picture, the block of words) and not onto the whole scene. A value set
+     on a scene makes the browser re-check every element inside it. */
+  function holder(el) { return el ? { el: el, css: {} } : null; }
 
   /* a scene only dissolves over the one before it when the two touch */
   function isScene(el) { return !!el && el.hasAttribute && el.hasAttribute('data-scene'); }
@@ -179,8 +200,12 @@
     var roots = el.hasAttribute('data-roots');
     return {
       el: el,
+      stage: holder($('.stage', el)),
+      film: roots ? null : holder($('.film', el)),
+      words: roots ? [] : $$('.panel, .cue', el).map(holder),
+      intro: roots ? $$('.intro, .root-tabs', el).map(holder) : [],
       /* the plant stage holds several clips that take turns */
-      items: roots ? $$('.root', el).map(function (r) { return { el: r, video: $('video[data-src]', r), loaded: false, time: 0 }; }) : null,
+      items: roots ? $$('.root', el).map(function (r) { return { el: r, film: holder($('.film', r)), words: holder($('.panel', r)), video: $('video[data-src]', r), loaded: false, time: 0 }; }) : null,
       tabs: roots ? $$('.root-tabs button', el) : [],
       at: -1,
       video: roots ? null : $('video[data-src]', el),
@@ -195,7 +220,12 @@
   if (FILM) doc.classList.add('film-on');
 
   function measure() {
-    vh = window.innerHeight; vw = window.innerWidth;
+    winH = window.innerHeight; vw = window.innerWidth;
+    /* On a phone the address bar slides away as you scroll, which changes
+       the window height but not the stage height. Measuring the stage
+       keeps the film from jumping when that happens. */
+    var probe = FILM && sceneEls[0] ? $('.stage', sceneEls[0]) : null;
+    vh = (probe && probe.offsetHeight) || winH;
     var y = window.scrollY;
     scenes.forEach(function (s) {
       var r = s.el.getBoundingClientRect();
@@ -222,7 +252,7 @@
   function scrub(holder, v, t, lean) {
     if (!v || v.readyState < 2 || !v.duration) return;
     var want = clamp(t * (v.duration - 0.08) + (lean ? tx * 0.5 : 0), 0, v.duration - 0.05);
-    holder.time += (want - holder.time) * 0.14;
+    holder.time += (want - holder.time) * ease(45);
     if (!v.seeking && Math.abs(v.currentTime - holder.time) > 0.012) v.currentTime = holder.time;
   }
 
@@ -237,7 +267,8 @@
     var index = Math.floor(x), t = x - index;
     var started = q >= INTRO;
 
-    s.el.style.setProperty('--intro', clamp((INTRO - q) * 30, 0, 1).toFixed(3));
+    var intro = clamp((INTRO - q) * 30, 0, 1).toFixed(3);
+    s.intro.forEach(function (h) { put(h, '--intro', intro); });
     if (index !== s.at) {
       s.at = index;
       s.items.forEach(function (it, i) { it.el.classList.toggle('on', i === index); });
@@ -249,8 +280,10 @@
     var item = s.items[index];
     loadClip(item);
     if (s.items[index + 1]) loadClip(s.items[index + 1]);
-    item.el.style.setProperty('--q', (started ? clamp(t * 1.9, 0, 1) : 0).toFixed(4));
-    item.el.style.setProperty('--o', (index === n - 1 ? 1 : clamp((1 - t) * 7, 0, 1)).toFixed(3));
+    put(item.words, '--q', (started ? clamp(t * 1.9, 0, 1) : 0).toFixed(4));
+    put(item.words, '--o', (index === n - 1 ? 1 : clamp((1 - t) * 7, 0, 1)).toFixed(3));
+    put(item.film, '--p', (started ? t : 0).toFixed(4));
+    if (HOVER) { put(item.film, '--mx', tx.toFixed(3)); put(item.film, '--my', ty.toFixed(3)); }
     scrub(item, item.video, started ? t : 0, true);
   }
 
@@ -259,16 +292,28 @@
     var total = s.height - vh;
     var start = s.fades ? (FADE * vh) / total : 0;
     var q = INTRO + ((i + 0.5) / s.items.length) * (1 - INTRO);
-    window.scrollTo({ top: s.top + (start + q * (1 - start)) * total, behavior: CALM ? 'auto' : 'smooth' });
+    travel(s.top + (start + q * (1 - start)) * total);
   }
 
   var progress = $('#progress');
 
-  function tick() {
-    var y = window.scrollY;
-    tx += (mx - tx) * 0.07; ty += (my - ty) * 0.07;
+  var progressNow = '', pageH = 0, pageHAt = -1e9;
+
+  function tick(now) {
+    dt = clamp(now - lastTick, 1, 50); lastTick = now;
+    var real = window.scrollY;
+    /* the scenes follow the scroll a moment behind, which turns the small
+       steps of a wheel, a keyboard or a dragged scrollbar into one move */
+    sy += (real - sy) * ease(70);
+    if (Math.abs(real - sy) < 0.25) sy = real;
+    var y = sy;
+    tx += (mx - tx) * ease(220); ty += (my - ty) * ease(220);
     /* the thin gold line under the top bar shows how far down the page you are */
-    if (progress) progress.style.transform = 'scaleX(' + clamp(y / Math.max(1, document.documentElement.scrollHeight - vh), 0, 1).toFixed(4) + ')';
+    if (progress) {
+      if (now - pageHAt > 500) { pageH = document.documentElement.scrollHeight; pageHAt = now; }   // reading this every frame is costly
+      var done = clamp(real / Math.max(1, pageH - winH), 0, 1).toFixed(4);
+      if (done !== progressNow) { progressNow = done; progress.style.transform = 'scaleX(' + done + ')'; }
+    }
 
     if (FILM) {
       scenes.forEach(function (s) {
@@ -288,13 +333,11 @@
         var o = s.covered ? clamp((end - p) * 14, 0, 1) : 1;
         var live = fade > 0.5 && (!s.covered || into < s.height - vh * (OVERLAP - FADE / 2));
 
-        var st = s.el.style;
-        st.setProperty('--p', p.toFixed(4));
-        st.setProperty('--q', q.toFixed(4));
-        st.setProperty('--o', o.toFixed(3));
-        st.setProperty('--fade', fade.toFixed(3));
-        st.setProperty('--mx', tx.toFixed(3));
-        st.setProperty('--my', ty.toFixed(3));
+        var qs = q.toFixed(4), os = o.toFixed(3);
+        put(s.stage, 'opacity', fade.toFixed(3));
+        put(s.film, '--p', p.toFixed(4));
+        if (HOVER) { put(s.film, '--mx', tx.toFixed(3)); put(s.film, '--my', ty.toFixed(3)); }
+        s.words.forEach(function (h) { put(h, '--q', qs); put(h, '--o', os); });
         if (live !== s.live) { s.live = live; s.el.classList.toggle('live', live); }
 
         if (s.items) { plantStage(s, q); }
@@ -332,34 +375,75 @@
      The wheel sets a destination and the page glides to it, which is what
      makes the camera moves feel smooth instead of stepped. Touch screens,
      trackpad momentum, the keyboard and the scrollbar are left alone. */
+  var dest = 0, pos = 0, gliding = false, glideAt = 0;
+
+  function glide(now) {
+    if (!gliding) return;
+    var d = clamp(now - glideAt, 1, 50); glideAt = now;
+    var gap = dest - pos;
+    if (Math.abs(gap) < 0.4) { gliding = false; window.scrollTo({ top: dest, behavior: 'instant' }); return; }
+    pos += gap * (1 - Math.exp(-d / 130));
+    window.scrollTo({ top: pos, behavior: 'instant' });
+    requestAnimationFrame(glide);
+  }
+
   if (FILM && HOVER) {
-    var dest = window.scrollY, gliding = false;
-
-    function glide() {
-      if (!gliding) return;
-      var y = window.scrollY, gap = dest - y;
-      if (Math.abs(gap) < 0.6) { gliding = false; return; }
-      window.scrollTo({ top: y + gap * 0.11, behavior: 'instant' });
-      requestAnimationFrame(glide);
-    }
-
     window.addEventListener('wheel', function (e) {
       if (e.ctrlKey || e.defaultPrevented) return;                       // pinch zoom
       if (doc.classList.contains('menu-open')) return;
       if (e.target.closest && e.target.closest('dialog, .chips, .needs, .vids.row, .root-tabs')) return; // let these scroll themselves
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       e.preventDefault();
-      var step = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaMode === 2 ? e.deltaY * vh : e.deltaY;
-      if (!gliding) dest = window.scrollY;
-      dest = clamp(dest + step, 0, document.documentElement.scrollHeight - vh);
-      if (!gliding) { gliding = true; requestAnimationFrame(glide); }
+      travelling = false;
+      var step = e.deltaMode === 1 ? e.deltaY * 32 : e.deltaMode === 2 ? e.deltaY * winH : e.deltaY;
+      if (!gliding) { dest = pos = window.scrollY; }
+      dest = clamp(dest + step, 0, document.documentElement.scrollHeight - winH);
+      if (!gliding) { gliding = true; glideAt = performance.now(); requestAnimationFrame(glide); }
     }, { passive: false });
-
-    /* a menu link or the keyboard moved the page: stop gliding and follow */
-    ['keydown', 'pointerdown'].forEach(function (name) {
-      window.addEventListener(name, function () { gliding = false; }, { passive: true });
-    });
   }
+
+  /* Going to another part of the page (a menu link, a button, a plant
+     tab). The browser's own smooth scroll takes the same short time
+     however far it has to go, which makes a long trip a blur. This one
+     takes longer for longer trips and eases in and out. */
+  var travelling = false;
+
+  function travel(to) {
+    to = clamp(to, 0, document.documentElement.scrollHeight - winH);
+    if (CALM) { window.scrollTo({ top: to, behavior: 'instant' }); return; }
+    var from = window.scrollY, gap = to - from;
+    if (Math.abs(gap) < 2) return;
+    var time = clamp(520 + Math.abs(gap) * 0.16, 620, 2000), began = 0;
+    gliding = false; travelling = true;
+    function frame(now) {
+      if (!travelling) return;
+      if (!began) began = now;
+      var t = clamp((now - began) / time, 0, 1);
+      var k = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      window.scrollTo({ top: from + gap * k, behavior: 'instant' });
+      if (t < 1) requestAnimationFrame(frame); else travelling = false;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* the visitor took over (wheel, touch, keyboard, a click): let go */
+  ['keydown', 'pointerdown', 'touchstart'].forEach(function (name) {
+    window.addEventListener(name, function () { gliding = false; travelling = false; }, { passive: true });
+  });
+
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey) return;
+    var id = a.getAttribute('href').slice(1);
+    var target = id ? document.getElementById(id) : document.body;
+    if (!target) return;
+    e.preventDefault();
+    var gapTop = parseFloat(getComputedStyle(doc).scrollPaddingTop) || 0;
+    travel(id ? target.getBoundingClientRect().top + window.scrollY - gapTop : 0);
+    if (history.pushState) history.pushState(null, '', id ? '#' + id : location.pathname + location.search);
+    /* keep the keyboard's place in step with where the page went */
+    if (id) { if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1'); target.focus({ preventScroll: true }); }
+  });
 
   /* Cards lean towards the pointer, with a highlight that follows it */
   if (HOVER && !CALM) {
@@ -487,7 +571,20 @@
     items.forEach(function (item, i) { if (i >= first) item.classList.add('later'); });
   }
   function openAll() { if (cat) cat.classList.remove('short'); }
-  if (showAll) showAll.addEventListener('click', function () { openAll(); apply(); });
+  if (showAll) showAll.addEventListener('click', function () {
+    items.forEach(function (item, i) { if (i >= first) item.style.setProperty('--n', Math.min(i - first, 11)); });
+    cat.classList.add('opening');
+    openAll(); apply();
+  });
+
+  /* play the short "cards arrive" animation again after a filter or sort */
+  function arrive() {
+    if (!grid || CALM) return;
+    if (cat) cat.classList.remove('opening');
+    grid.classList.remove('swap');
+    void grid.offsetWidth;
+    grid.classList.add('swap');
+  }
 
   function apply() {
     if (state.area || state.text) openAll();
@@ -516,7 +613,7 @@
       chip.setAttribute('aria-pressed', on ? 'true' : 'false');
       if (on && chip.scrollIntoView) chip.parentNode.scrollTo({ left: chip.offsetLeft - 24, behavior: CALM ? 'auto' : 'smooth' });
     });
-    apply();
+    apply(); arrive();
   }
 
   if (grid && search && count) {
@@ -533,6 +630,7 @@
         var d = a.getAttribute('data-min') - b.getAttribute('data-min');
         return mode === 'lo' ? d : -d;
       }).forEach(function (item) { grid.appendChild(item); });
+      arrive();
     });
     $('#clear').addEventListener('click', function () {
       search.value = ''; state.text = ''; setArea('');
@@ -599,14 +697,28 @@
     sheet.showModal();
   }
 
+  /* close a pop-up window with a short fade instead of a cut */
+  function shut(box) {
+    if (!box || !box.open || box.classList.contains('closing')) return;
+    if (CALM) { box.close(); return; }
+    box.classList.add('closing');
+    setTimeout(function () { box.classList.remove('closing'); box.close(); }, 200);
+  }
+  [$('#sheet'), $('#player')].forEach(function (box) {
+    if (!box) return;
+    box.addEventListener('cancel', function (e) { e.preventDefault(); shut(box); });          // the Esc key
+    $$('form[method="dialog"]', box).forEach(function (f) { f.addEventListener('submit', function (e) { e.preventDefault(); shut(box); }); });
+    $$('[data-close]', box).forEach(function (b) { b.addEventListener('click', function () { shut(box); }); });
+  });
+
   document.addEventListener('click', function (e) {
     var opener = e.target.closest && e.target.closest('[data-open]');
     if (opener && opener.getAttribute('data-open')) openProduct(opener.getAttribute('data-open'));
-    if (e.target === sheet) sheet.close();   // a click on the dimmed area closes it
+    if (e.target === sheet) shut(sheet);   // a click on the dimmed area closes it
 
     var vid = e.target.closest && e.target.closest('[data-video]');
     if (vid) playVideo(vid.getAttribute('data-video'), vid.hasAttribute('data-short'), vid.getAttribute('data-sample'));
-    if (e.target === player) player.close();
+    if (e.target === player) shut(player);
   });
 
 
