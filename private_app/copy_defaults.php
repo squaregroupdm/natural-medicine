@@ -30,6 +30,7 @@ return [
   ['nav', 'videos',   'Menu: videos',             'Videos', 'ভিডিও'],
   ['nav', 'menu',     'Phone menu button',        'Menu', 'মেনু'],
   ['nav', 'close',    'Phone menu close button',  'Close', 'বন্ধ'],
+  ['nav', 'more',     'Label for the sideways scroll arrow', 'Scroll for more', 'আরও দেখতে সরান'],
   ['nav', 'skip',     'Skip link for keyboards',  'Skip to content', 'মূল অংশে যান'],
 
   // ---- opening screen ----
@@ -56,16 +57,18 @@ return [
   ['materia', 'label',   'Section label', 'Back to the root', 'ফিরে যাই শিকড়ে'],
   ['materia', 'title',   'Headline',      'Known first. Studied second.', 'আগে পরিচিত। পরে প্রমাণিত।'],
   ['materia', 'hint',    'Small hint under the headline', 'Each of these products began as something that grows. Meet the plant, then the medicine it becomes.', 'এই প্রতিটি পণ্যের শুরু কোনো না কোনো গাছ থেকে। আগে গাছটিকে চিনুন, তারপর যে ওষুধ সে হয়ে ওঠে।'],
+  ['materia', 'cue',     'Scroll hint in the plant section', 'Keep scrolling to meet each plant', 'প্রতিটি গাছ দেখতে স্ক্রল করতে থাকুন'],
   ['plate',   'becomes', 'Label above the product name',  'Becomes', 'যা হয়ে ওঠে'],
   ['plate',   'from',    'Starting price. Keep {price}',  'from {price}', '{price} থেকে'],
 
   // ---- into everyday life (the Wellness Finder) ----
-  ['finder', 'label',   'Section label', 'Into everyday life', 'প্রতিদিনের জীবনে'],
+  ['finder', 'label',   'Section label', 'Start with everyday life', 'শুরু হোক প্রতিদিনের জীবন থেকে'],
   ['finder', 'title',   'Headline',      'What would you like to support?', 'আপনি কোন দিকটির যত্ন নিতে চান?'],
   ['finder', 'body',    'Paragraph',     'Pick what matters to you today. We will show what fits.', 'আজ আপনার কাছে যা জরুরি, সেটি বেছে নিন। মানানসই পণ্য আমরা দেখাব।'],
   ['finder', 'for',     'Small label above each product', 'Good for', 'যার জন্য'],
   ['finder', 'videos',  'Heading above videos for a need', 'People talking about this', 'এ নিয়ে যাঁরা বলছেন'],
   ['finder', 'all',     'Link under the products', 'See all products', 'সব পণ্য দেখুন'],
+  ['finder', 'bridge',  'Line that leads into the plants', 'Every one of these began as a plant. See where they come from.', 'এর প্রতিটির শুরু কোনো না কোনো গাছ থেকে। দেখুন কোথা থেকে আসে।'],
   ['finder', 'advice',  'Health note', 'This is a guide, not a diagnosis. Speak to a registered physician before starting any product.', 'এটি একটি নির্দেশিকা, রোগ নির্ণয় নয়। যেকোনো পণ্য শুরুর আগে নিবন্ধিত চিকিৎসকের পরামর্শ নিন।'],
 
   // ---- trusted by Square ----
@@ -110,6 +113,7 @@ return [
   ['catalogue', 'count',    'Result count. Keep {n} and {total}', '{n} of {total} products', '{total}টির মধ্যে {n}টি পণ্য'],
   ['catalogue', 'empty',    'Message when nothing matches', 'Nothing matches that. Try another plant or clear the filters.', 'কিছু পাওয়া যায়নি। অন্য কিছু খুঁজুন বা ফিল্টার মুছে দিন।'],
   ['catalogue', 'clear',    'Clear filters button',         'Clear filters', 'ফিল্টার মুছুন'],
+  ['catalogue', 'show_all', 'Button that reveals the rest. Keep {total}', 'Show all {total} products', 'সব {total}টি পণ্য দেখুন'],
   ['catalogue', 'browse',   'Button to the products page',  'Browse all products', 'সব পণ্য দেখুন'],
 
   // ---- product detail window ----

@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'name_en'    => trim((string)$_POST['name_en']),
             'name_bn'    => trim((string)$_POST['name_bn']),
             'botanical'  => trim((string)$_POST['botanical']),
+            'common_en'  => trim((string)($_POST['common_en'] ?? '')) ?: null,
             'part_en'    => trim((string)$_POST['part_en']),
             'part_bn'    => trim((string)$_POST['part_bn']),
             'known_en'   => trim((string)$_POST['known_en']),
@@ -63,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if (isset($_GET['id']) || isset($_GET['new'])) {
     $g = isset($_GET['id']) ? q1('SELECT * FROM ingredients WHERE id = ?', [(int)$_GET['id']]) : null;
-    if (!$g) $g = ['id'=>0,'plant_key'=>'basak','name_en'=>'','name_bn'=>'','botanical'=>'',
+    if (!$g) $g = ['id'=>0,'plant_key'=>'basak','name_en'=>'','name_bn'=>'','botanical'=>'','common_en'=>'',
                    'part_en'=>'','part_bn'=>'','known_en'=>'','known_bn'=>'','does_en'=>'','does_bn'=>'',
                    'image'=>null,'video'=>null,'product_id'=>null,'sort_order'=>999,'is_visible'=>1];
 
@@ -89,6 +90,10 @@ if (isset($_GET['id']) || isset($_GET['new'])) {
         <div class="field">
           <label>Botanical name <em>shown in italics</em></label>
           <input type="text" name="botanical" value="<?= e($g['botanical']) ?>" required>
+        </div>
+        <div class="field">
+          <label>English common name <em>optional, shown small in English only, for example "Malabar nut"</em></label>
+          <input type="text" name="common_en" value="<?= e((string)($g['common_en'] ?? '')) ?>">
         </div>
       </div>
 

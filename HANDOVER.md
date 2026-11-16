@@ -57,6 +57,16 @@ deploy must preserve that, with the server's web root pointing at
 Whichever you choose, a deploy must never overwrite `private_app/config.php`
 or `public_html/uploads/`. Both are in `.gitignore` for that reason.
 
+### Upgrading a database installed before 16 November 2026
+
+Run this once in phpMyAdmin. A fresh install does not need it.
+
+```sql
+ALTER TABLE ingredients ADD COLUMN common_en VARCHAR(120) NULL AFTER botanical;
+```
+
+Then open Admin, Plants and set the names you want. New page text (the "Show all" button, the scroll hints) appears by itself with its default wording.
+
 ## Day-to-day operations
 
 Everything below is done at `/admin/` and needs no code.
@@ -115,6 +125,9 @@ Design rules are in `docs/DESIGN.md`. Read it before changing the look.
 - Scenes are tall blocks whose stage is `position: sticky`. Each one overlaps the one before by 160vh and fades in over it. The overlap is set in two places that must agree: `OVERLAP` and `FADE` in `site.js`, and the `-160vh` margin in `site.css`.
 - Clips load one at a time, shortly before they are needed, never all at once. Clips are not loaded at all for visitors who ask for reduced motion, who then get a normal still page.
 - The server must answer byte-range requests for MP4 files, or clips cannot seek. Apache and Nginx do this by default. PHP's built-in development server does not.
+- The home page shows the first 12 product cards with a "Show all" button. The number is the third argument of `catalogue_block()` in `index.php`. Filtering, searching or sorting opens the full list by itself. `products.php` always shows everything.
+- Rows that scroll sideways (the need buttons and video rows on a phone, the filter buttons everywhere) are wrapped by `sideways()` in `site.js`, which adds an arrow button and a faded edge while there is more to see.
+- Plants carry a local name (`name_en`, for example "Basak") and an optional English common name (`common_en`, for example "Malabar nut") that is shown small beside the botanical name in English mode only.
 - Bangla mode switches digits and currency (`৳`) in PHP (`digits()`, `money()`) and in `site.js` (`digits()`).
 
 ## Data and privacy

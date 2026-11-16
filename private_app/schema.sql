@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS ingredients (
   name_en      VARCHAR(120) NOT NULL,          -- "Malabar Nut"
   name_bn      VARCHAR(160) NULL,              -- "বাসক"
   botanical    VARCHAR(160) NOT NULL,          -- "Adhatoda vasica"
+  common_en    VARCHAR(120) NULL,              -- the English common name, "Malabar nut" (shown small, English only)
   part_en      VARCHAR(80)  NULL,
   part_bn      VARCHAR(120) NULL,
   known_en     TEXT NULL,                      -- what people already know

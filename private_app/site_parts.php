@@ -168,8 +168,10 @@ function talk_card(array $t): string
 /**
  * The full product list with its filter bar, search and sort.
  * Used on the home page and on products.php. $tag is the heading level.
+ * $first, when set, shows only that many cards until "Show all" is pressed
+ * (filtering or searching always looks through every product).
  */
-function catalogue_block(array $groups, string $tag = 'h2'): void
+function catalogue_block(array $groups, string $tag = 'h2', int $first = 0): void
 {
     $total = count($groups);
     // only show filter buttons for health areas that have products
@@ -180,7 +182,7 @@ function catalogue_block(array $groups, string $tag = 'h2'): void
         fn($a) => isset($has[$a['slug']])
     ));
     ?>
-  <div class="cat">
+  <div class="cat<?= ($first && $total > $first) ? ' short' : '' ?>"<?= $first ? ' data-first="' . $first . '"' : '' ?>>
   <div class="wrap">
     <p class="label" data-r><?= e(copyText('catalogue', 'label')) ?></p>
     <<?= $tag ?> class="display" data-words><?= e(copyText('catalogue', 'title')) ?></<?= $tag ?>>
@@ -217,6 +219,10 @@ function catalogue_block(array $groups, string $tag = 'h2'): void
        data-tpl="<?= e(copyText('catalogue', 'count')) ?>" data-total="<?= $total ?>"><?= e(copyText('catalogue', 'count', ['n' => digits((string)$total), 'total' => digits((string)$total)])) ?></p>
 
     <ul class="grid" id="grid"><?php $n = 0; foreach ($groups as $g) echo product_card($g, ++$n); ?></ul>
+
+    <?php if ($first && $total > $first): ?>
+      <p class="more-row"><button type="button" class="btn dark-btn" id="showAll"><?= e(copyText('catalogue', 'show_all', ['total' => digits((string)$total)])) ?> <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v11M3.5 8.5 8 13l4.5-4.5"/></svg></button></p>
+    <?php endif; ?>
 
     <div class="empty" id="empty" hidden>
       <p><?= e(copyText('catalogue', 'empty')) ?></p>
@@ -304,7 +310,7 @@ function page_head(string $page, string $title, string $desc): void
 })(document.documentElement);
 </script>
 </head>
-<body>
+<body data-more="<?= e(copyText('nav', 'more')) ?>">
 <a class="skip" href="#main"><?= e(copyText('nav', 'skip')) ?></a>
 <?php
 }

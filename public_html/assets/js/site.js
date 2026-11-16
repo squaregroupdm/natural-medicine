@@ -477,7 +477,20 @@
   var empty = $('#empty');
   var state = { area: '', text: '' };
 
+  /* On the home page only the first dozen cards show until "Show all" is
+     pressed. Filtering or searching always looks through every product. */
+  var cat = $('.cat');
+  var showAll = $('#showAll');
+  var first = 0;
+  if (cat && cat.hasAttribute('data-first')) {
+    first = parseInt(cat.getAttribute('data-first'), 10) || 0;
+    items.forEach(function (item, i) { if (i >= first) item.classList.add('later'); });
+  }
+  function openAll() { if (cat) cat.classList.remove('short'); }
+  if (showAll) showAll.addEventListener('click', function () { openAll(); apply(); });
+
   function apply() {
+    if (state.area || state.text) openAll();
     var words = state.text.toLowerCase().split(/\s+/).filter(Boolean);
     var shown = 0;
     items.forEach(function (item) {
@@ -489,6 +502,7 @@
       item.hidden = !ok;
       if (ok) shown++;
     });
+    if (cat && cat.classList.contains('short')) shown = Math.min(shown, first);
     count.textContent = count.getAttribute('data-tpl')
       .replace('{n}', digits(shown)).replace('{total}', digits(count.getAttribute('data-total')));
     empty.hidden = shown !== 0;
@@ -506,11 +520,13 @@
   }
 
   if (grid && search && count) {
+    if (first) apply();
     chips.forEach(function (chip) {
       chip.addEventListener('click', function () { setArea(chip.getAttribute('data-area')); });
     });
     search.addEventListener('input', function () { state.text = search.value; apply(); });
     sort.addEventListener('change', function () {
+      openAll();
       var mode = sort.value;
       items.slice().sort(function (a, b) {
         if (mode === 'az') return a.getAttribute('data-ord') - b.getAttribute('data-ord');
@@ -592,6 +608,45 @@
     if (vid) playVideo(vid.getAttribute('data-video'), vid.hasAttribute('data-short'), vid.getAttribute('data-sample'));
     if (e.target === player) player.close();
   });
+
+
+  /* ---------- 8b. Sideways rows ---------- */
+
+  /* Any row that scrolls sideways (need buttons and video rows on a phone,
+     the filter buttons everywhere) gets an arrow and a faded edge while
+     there is more to see, so nobody misses what is off screen. */
+  function sideways(row) {
+    var wrap = document.createElement('div');
+    wrap.className = 'scroller';
+    row.parentNode.insertBefore(wrap, row);
+    wrap.appendChild(row);
+
+    function arrow(dir) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'swipe ' + (dir > 0 ? 'next' : 'prev');
+      b.setAttribute('aria-label', document.body.getAttribute('data-more') || 'More');
+      b.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M8.5 3.5 13 8l-4.5 4.5"/></svg>';
+      b.addEventListener('click', function () { row.scrollBy({ left: dir * row.clientWidth * 0.8, behavior: CALM ? 'auto' : 'smooth' }); });
+      wrap.appendChild(b);
+    }
+    arrow(1); arrow(-1);
+
+    function check() {
+      var room = row.scrollWidth - row.clientWidth;
+      wrap.classList.toggle('more', room > 8 && row.scrollLeft < room - 8);
+      wrap.classList.toggle('back', room > 8 && row.scrollLeft > 8);
+      if (row.scrollLeft > 8) wrap.classList.add('seen');
+      var thumb = $('.thumb', row);
+      if (thumb) wrap.style.setProperty('--thumb-h', thumb.offsetHeight + 'px');
+    }
+    row.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    window.addEventListener('load', check);
+    if ('ResizeObserver' in window) new ResizeObserver(check).observe(row);
+    check();
+  }
+  $$('.needs, .vids.row, .chips').forEach(sideways);
 
 
   /* ---------- 9. Video player ---------- */

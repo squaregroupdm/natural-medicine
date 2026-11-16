@@ -168,6 +168,7 @@ page_head('home', copyText('brand', 'name') . ' | ' . copyText('brand', 'tagline
       <a class="btn dark-btn" href="#start"><?= e(copyText('finder', 'all')) ?> <?= $arrow ?></a>
       <span><?= e(copyText('finder', 'advice')) ?></span>
     </p>
+    <p class="bridge" data-r><a href="#roots"><?= e(copyText('finder', 'bridge')) ?> <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v11M3.5 8.5 8 13l4.5-4.5"/></svg></a></p>
   </div>
 </section>
 <?php endif; ?>
@@ -187,7 +188,7 @@ page_head('home', copyText('brand', 'name') . ' | ' . copyText('brand', 'tagline
           <div class="wrap panel">
             <p class="spec-n st" style="--at:0"><b><?= nn($n + 1) ?></b> / <?= nn($total) ?> <span><?= e(pick($p, 'part')) ?></span></p>
             <h3 class="plant-name st" style="--at:.04"><?= e(pick($p, 'name')) ?></h3>
-            <p class="botanical st" style="--at:.1" lang="la"><?= e($p['botanical']) ?></p>
+            <p class="botanical st" style="--at:.1"><i lang="la"><?= e($p['botanical']) ?></i><?php if (!$bn && !empty($p['common_en'])): ?><span><?= e($p['common_en']) ?></span><?php endif; ?></p>
             <p class="known st" style="--at:.24"><?= e(pick($p, 'known')) ?></p>
             <p class="does st" style="--at:.36"><?= e(pick($p, 'does')) ?></p>
             <?php if ($p['brand']): ?>
@@ -212,6 +213,7 @@ page_head('home', copyText('brand', 'name') . ' | ' . copyText('brand', 'tagline
       <p class="label"><?= e(copyText('materia', 'label')) ?></p>
       <h2 class="display xl"><?= e(copyText('materia', 'title')) ?></h2>
       <p class="lede"><?= e(copyText('materia', 'hint')) ?></p>
+      <p class="keep-going"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v11M3.5 8.5 8 13l4.5-4.5"/></svg><?= e(copyText('materia', 'cue')) ?></p>
     </div>
 
     <nav class="root-tabs" aria-label="<?= e(copyText('nav', 'plants')) ?>">
@@ -264,7 +266,7 @@ page_head('home', copyText('brand', 'name') . ' | ' . copyText('brand', 'tagline
 
 <!-- ======================= 7. every product, and questions ======================= -->
 <section class="start catalogue light lift" id="start" data-tone="light">
-  <?php catalogue_block($groups); ?>
+  <?php catalogue_block($groups, 'h2', 12); ?>
   <div class="wrap">
     <?php if ($faqs || $talks['why']): ?>
     <div class="faq" id="faq">
