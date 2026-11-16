@@ -440,7 +440,7 @@
     e.preventDefault();
     var gapTop = parseFloat(getComputedStyle(doc).scrollPaddingTop) || 0;
     travel(id ? target.getBoundingClientRect().top + window.scrollY - gapTop : 0);
-    if (history.pushState) history.pushState(null, '', id ? '#' + id : location.pathname + location.search);
+    try { history.pushState(null, '', id ? '#' + id : location.pathname + location.search); } catch (err) { /* some embedded pages do not allow it */ }
     /* keep the keyboard's place in step with where the page went */
     if (id) { if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1'); target.focus({ preventScroll: true }); }
   });
